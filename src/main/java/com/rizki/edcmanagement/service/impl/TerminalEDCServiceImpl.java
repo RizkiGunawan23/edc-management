@@ -1,6 +1,7 @@
 package com.rizki.edcmanagement.service.impl;
 
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import com.rizki.edcmanagement.exception.ResourceAlreadyExistsException;
 import com.rizki.edcmanagement.exception.ResourceNotFoundException;
 import com.rizki.edcmanagement.mapper.TerminalEDCMapper;
 import com.rizki.edcmanagement.model.TerminalEDC;
+import com.rizki.edcmanagement.model.enums.TerminalStatus;
 import com.rizki.edcmanagement.repository.TerminalEDCRepository;
 import com.rizki.edcmanagement.service.TerminalEDCService;
 import com.rizki.edcmanagement.specification.TerminalEDCSpecification;
@@ -131,8 +133,51 @@ public class TerminalEDCServiceImpl implements TerminalEDCService {
             }
         }
 
-        // Update terminal with new data using mapper
-        terminalEDCMapper.updateTerminalFromDTO(requestDTO, existingTerminal);
+        // Store current status for maintenance detection
+        TerminalStatus oldStatus = existingTerminal.getStatus();
+
+        // Update terminal with new data
+        if (requestDTO.getLocation() != null) {
+            existingTerminal.setLocation(requestDTO.getLocation().trim());
+        }
+
+        // Update status if provided
+        if (requestDTO.getStatus() != null && !requestDTO.getStatus().trim().isEmpty()) {
+            try {
+                TerminalStatus status = TerminalStatus.valueOf(requestDTO.getStatus().toUpperCase().trim());
+                existingTerminal.setStatus(status);
+            } catch (IllegalArgumentException e) {
+                // Invalid status will be caught by validation
+            }
+        }
+
+        // Update serial number if provided
+        if (requestDTO.getSerialNumber() != null) {
+            existingTerminal.setSerialNumber(requestDTO.getSerialNumber().trim());
+        }
+
+        // Update model if provided
+        if (requestDTO.getModel() != null) {
+            existingTerminal.setModel(requestDTO.getModel().trim());
+        }
+
+        // Update manufacturer if provided
+        if (requestDTO.getManufacturer() != null) {
+            existingTerminal.setManufacturer(requestDTO.getManufacturer().trim());
+        }
+
+        // Update IP address if provided
+        if (requestDTO.getIpAddress() != null) {
+            String ipAddress = requestDTO.getIpAddress().trim();
+            existingTerminal.setIpAddress(ipAddress.isEmpty() ? null : ipAddress);
+        }
+
+        // Auto-update lastMaintenance if status changed from MAINTENANCE to something
+        // else
+        if (oldStatus == TerminalStatus.MAINTENANCE &&
+                existingTerminal.getStatus() != TerminalStatus.MAINTENANCE) {
+            existingTerminal.setLastMaintenance(LocalDateTime.now());
+        }
 
         // Save updated terminal
         TerminalEDC updatedTerminal = terminalRepository.save(existingTerminal);

@@ -140,6 +140,12 @@ public class TerminalEDCSpecification {
         if (filters.getCreatedTo() != null && !filters.getCreatedTo().trim().isEmpty()) {
             appliedFilters.add("createdTo=" + filters.getCreatedTo());
         }
+        if (filters.getLastMaintenanceFrom() != null && !filters.getLastMaintenanceFrom().trim().isEmpty()) {
+            appliedFilters.add("lastMaintenanceFrom=" + filters.getLastMaintenanceFrom());
+        }
+        if (filters.getLastMaintenanceTo() != null && !filters.getLastMaintenanceTo().trim().isEmpty()) {
+            appliedFilters.add("lastMaintenanceTo=" + filters.getLastMaintenanceTo());
+        }
 
         return appliedFilters.isEmpty() ? "No filters applied" : String.join(", ", appliedFilters);
     }
