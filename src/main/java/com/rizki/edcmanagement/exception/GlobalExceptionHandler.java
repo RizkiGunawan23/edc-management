@@ -29,6 +29,15 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
         }
 
+        @ExceptionHandler(InvalidSignatureException.class)
+        public ResponseEntity<ErrorResponse> handleInvalidSignatureException(InvalidSignatureException ex,
+                        WebRequest request) {
+                ErrorResponse error = ErrorResponse.builder()
+                                .message(ex.getMessage())
+                                .build();
+                return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+        }
+
         @ExceptionHandler(NoHandlerFoundException.class)
         public ResponseEntity<ErrorResponse> handleNoHandlerFoundException(NoHandlerFoundException ex,
                         WebRequest request) {
