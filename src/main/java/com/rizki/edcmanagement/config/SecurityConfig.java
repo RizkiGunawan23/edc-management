@@ -30,7 +30,6 @@ public class SecurityConfig {
                 .antMatchers("/api/auth/sign-in").permitAll()
                 .antMatchers("/api/auth/refresh").permitAll()
                 .antMatchers("/api/edc/echo").permitAll()
-                .antMatchers("/api/edc").authenticated()
                 .anyRequest().authenticated())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
