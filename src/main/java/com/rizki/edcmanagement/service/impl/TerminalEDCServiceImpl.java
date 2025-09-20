@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.rizki.edcmanagement.dto.terminal.request.CreateTerminalEDCRequestDTO;
 import com.rizki.edcmanagement.dto.terminal.request.GetTerminalEDCRequestDTO;
+import com.rizki.edcmanagement.dto.terminal.request.UpdateTerminalEDCRequestDTO;
 import com.rizki.edcmanagement.dto.terminal.response.PagedTerminalEDCResponseDTO;
 import com.rizki.edcmanagement.dto.terminal.response.TerminalEDCResponseDTO;
 import com.rizki.edcmanagement.exception.ResourceAlreadyExistsException;
@@ -110,5 +111,33 @@ public class TerminalEDCServiceImpl implements TerminalEDCService {
 
         // Convert entity to DTO and return
         return terminalEDCMapper.fromTerminalEDCToResponse(terminal);
+    }
+
+    @Override
+    @Transactional
+    public TerminalEDCResponseDTO updateTerminal(String terminalId, UpdateTerminalEDCRequestDTO requestDTO) {
+        // Find existing terminal
+        TerminalEDC existingTerminal = terminalRepository.findById(terminalId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Terminal EDC with ID '" + terminalId + "' not found"));
+
+        // Business validation: Check IP address uniqueness if provided and different
+        // from current
+        if (requestDTO.getIpAddress() != null && !requestDTO.getIpAddress().trim().isEmpty()) {
+            if (!requestDTO.getIpAddress().equals(existingTerminal.getIpAddress()) &&
+                    terminalRepository.existsByIpAddress(requestDTO.getIpAddress())) {
+                throw new ResourceAlreadyExistsException(
+                        "Terminal EDC with IP address '" + requestDTO.getIpAddress() + "' already exists");
+            }
+        }
+
+        // Update terminal with new data using mapper
+        terminalEDCMapper.updateTerminalFromDTO(requestDTO, existingTerminal);
+
+        // Save updated terminal
+        TerminalEDC updatedTerminal = terminalRepository.save(existingTerminal);
+
+        // Convert entity to DTO and return
+        return terminalEDCMapper.fromTerminalEDCToResponse(updatedTerminal);
     }
 }

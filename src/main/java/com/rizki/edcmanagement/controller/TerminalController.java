@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.rizki.edcmanagement.dto.common.SuccessResponse;
 import com.rizki.edcmanagement.dto.terminal.request.CreateTerminalEDCRequestDTO;
 import com.rizki.edcmanagement.dto.terminal.request.GetTerminalEDCRequestDTO;
+import com.rizki.edcmanagement.dto.terminal.request.UpdateTerminalEDCRequestDTO;
 import com.rizki.edcmanagement.dto.terminal.response.PagedTerminalEDCResponseDTO;
 import com.rizki.edcmanagement.dto.terminal.response.TerminalEDCResponseDTO;
 import com.rizki.edcmanagement.service.TerminalEDCService;
@@ -54,6 +56,18 @@ public class TerminalController {
         TerminalEDCResponseDTO responseDTO = terminalEDCService.getTerminalById(terminalId);
         SuccessResponse<TerminalEDCResponseDTO> response = SuccessResponse.<TerminalEDCResponseDTO>builder()
                 .message("Terminal retrieved successfully")
+                .data(responseDTO)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{terminalId}")
+    public ResponseEntity<SuccessResponse<TerminalEDCResponseDTO>> updateTerminal(
+            @PathVariable String terminalId,
+            @Valid @RequestBody UpdateTerminalEDCRequestDTO requestDTO) {
+        TerminalEDCResponseDTO responseDTO = terminalEDCService.updateTerminal(terminalId, requestDTO);
+        SuccessResponse<TerminalEDCResponseDTO> response = SuccessResponse.<TerminalEDCResponseDTO>builder()
+                .message("Terminal updated successfully")
                 .data(responseDTO)
                 .build();
         return ResponseEntity.ok(response);
