@@ -35,6 +35,15 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
         }
 
+        @ExceptionHandler(ResourceNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse error = ErrorResponse.builder()
+                                .message(ex.getMessage())
+                                .build();
+                return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+        }
+
         @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
         public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupportedException(
                         HttpRequestMethodNotSupportedException ex, WebRequest request) {
