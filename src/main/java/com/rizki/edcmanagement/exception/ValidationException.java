@@ -11,6 +11,11 @@ public class ValidationException extends RuntimeException {
         this.fieldErrors = fieldErrors;
     }
 
+    public ValidationException(String message) {
+        super(message);
+        this.fieldErrors = null;
+    }
+
     public Map<String, List<String>> getFieldErrors() {
         return fieldErrors;
     }

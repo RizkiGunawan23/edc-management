@@ -10,9 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.rizki.edcmanagement.dto.auth.request.RefreshRequestDTO;
 import com.rizki.edcmanagement.dto.auth.request.SignInRequestDTO;
 import com.rizki.edcmanagement.dto.auth.request.SignUpRequestDTO;
-import com.rizki.edcmanagement.dto.auth.response.RefreshResponseDTO;
-import com.rizki.edcmanagement.dto.auth.response.SignInResponseDTO;
-import com.rizki.edcmanagement.dto.auth.response.SignUpResponseDTO;
+import com.rizki.edcmanagement.dto.auth.response.AuthResponseDTO;
 import com.rizki.edcmanagement.dto.auth.response.TokenResponse;
 import com.rizki.edcmanagement.dto.auth.response.UserResponse;
 import com.rizki.edcmanagement.exception.ResourceAlreadyExistsException;
@@ -54,7 +52,7 @@ public class AuthServiceImpl implements AuthService {
 
         @Override
         @Transactional
-        public SignUpResponseDTO signUp(SignUpRequestDTO requestDTO) {
+        public AuthResponseDTO signUp(SignUpRequestDTO requestDTO) {
                 repository.findByUsername(requestDTO.getUsername())
                                 .ifPresent(user -> {
                                         throw new ResourceAlreadyExistsException("Username is already exists");
@@ -77,7 +75,7 @@ public class AuthServiceImpl implements AuthService {
                                 .refreshToken(refreshToken)
                                 .build();
 
-                return SignUpResponseDTO.builder()
+                return AuthResponseDTO.builder()
                                 .user(userResponse)
                                 .tokens(tokenResponse)
                                 .build();
@@ -85,7 +83,7 @@ public class AuthServiceImpl implements AuthService {
 
         @Override
         @Transactional
-        public SignInResponseDTO signIn(SignInRequestDTO requestDTO) {
+        public AuthResponseDTO signIn(SignInRequestDTO requestDTO) {
                 User user = repository.findByUsername(requestDTO.getUsername())
                                 .orElseThrow(() -> new ResourceNotFoundException("Username or password is incorrect"));
 
@@ -104,7 +102,7 @@ public class AuthServiceImpl implements AuthService {
                                 .refreshToken(refreshToken)
                                 .build();
 
-                return SignInResponseDTO.builder()
+                return AuthResponseDTO.builder()
                                 .user(userResponse)
                                 .tokens(tokenResponse)
                                 .build();
@@ -112,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
 
         @Override
         @Transactional
-        public RefreshResponseDTO refresh(RefreshRequestDTO requestDTO) {
+        public AuthResponseDTO refresh(RefreshRequestDTO requestDTO) {
                 User user = repository.findByRefreshToken(requestDTO.getRefreshToken())
                                 .orElseThrow(() -> new ResourceNotFoundException("Invalid refresh token"));
 
@@ -130,7 +128,7 @@ public class AuthServiceImpl implements AuthService {
                                 .build();
                 UserResponse userResponse = userMapper.fromUserToUserResponse(user);
 
-                return RefreshResponseDTO.builder()
+                return AuthResponseDTO.builder()
                                 .user(userResponse)
                                 .tokens(tokenResponse)
                                 .build();

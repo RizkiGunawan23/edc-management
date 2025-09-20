@@ -3,17 +3,15 @@ package com.rizki.edcmanagement.service;
 import com.rizki.edcmanagement.dto.auth.request.RefreshRequestDTO;
 import com.rizki.edcmanagement.dto.auth.request.SignInRequestDTO;
 import com.rizki.edcmanagement.dto.auth.request.SignUpRequestDTO;
-import com.rizki.edcmanagement.dto.auth.response.RefreshResponseDTO;
-import com.rizki.edcmanagement.dto.auth.response.SignInResponseDTO;
-import com.rizki.edcmanagement.dto.auth.response.SignUpResponseDTO;
+import com.rizki.edcmanagement.dto.auth.response.AuthResponseDTO;
 import com.rizki.edcmanagement.model.User;
 
 public interface AuthService {
-    SignUpResponseDTO signUp(SignUpRequestDTO requestDTO);
+    AuthResponseDTO signUp(SignUpRequestDTO requestDTO);
 
-    SignInResponseDTO signIn(SignInRequestDTO requestDTO);
+    AuthResponseDTO signIn(SignInRequestDTO requestDTO);
 
-    RefreshResponseDTO refresh(RefreshRequestDTO requestDTO);
+    AuthResponseDTO refresh(RefreshRequestDTO requestDTO);
 
     void signOut();
 
