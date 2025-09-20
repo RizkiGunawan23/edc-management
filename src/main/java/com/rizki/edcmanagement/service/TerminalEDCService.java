@@ -9,4 +9,6 @@ public interface TerminalEDCService {
     TerminalEDCResponseDTO createTerminal(CreateTerminalEDCRequestDTO requestDTO);
 
     PagedTerminalEDCResponseDTO getAllTerminals(GetTerminalEDCRequestDTO requestDTO);
+
+    TerminalEDCResponseDTO getTerminalById(String terminalId);
 }

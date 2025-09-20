@@ -17,6 +17,7 @@ import com.rizki.edcmanagement.dto.terminal.request.GetTerminalEDCRequestDTO;
 import com.rizki.edcmanagement.dto.terminal.response.PagedTerminalEDCResponseDTO;
 import com.rizki.edcmanagement.dto.terminal.response.TerminalEDCResponseDTO;
 import com.rizki.edcmanagement.exception.ResourceAlreadyExistsException;
+import com.rizki.edcmanagement.exception.ResourceNotFoundException;
 import com.rizki.edcmanagement.mapper.TerminalEDCMapper;
 import com.rizki.edcmanagement.model.TerminalEDC;
 import com.rizki.edcmanagement.repository.TerminalEDCRepository;
@@ -97,5 +98,17 @@ public class TerminalEDCServiceImpl implements TerminalEDCService {
                 .sortDirection(requestDTO.getSortDirection())
                 .appliedFilters(appliedFilters)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TerminalEDCResponseDTO getTerminalById(String terminalId) {
+        // Find terminal by ID
+        TerminalEDC terminal = terminalRepository.findById(terminalId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Terminal EDC with ID '" + terminalId + "' not found"));
+
+        // Convert entity to DTO and return
+        return terminalEDCMapper.fromTerminalEDCToResponse(terminal);
     }
 }

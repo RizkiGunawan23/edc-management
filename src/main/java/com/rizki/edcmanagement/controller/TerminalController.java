@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,6 +43,17 @@ public class TerminalController {
         PagedTerminalEDCResponseDTO responseDTO = terminalEDCService.getAllTerminals(requestDTO);
         SuccessResponse<PagedTerminalEDCResponseDTO> response = SuccessResponse.<PagedTerminalEDCResponseDTO>builder()
                 .message("Terminals retrieved successfully")
+                .data(responseDTO)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{terminalId}")
+    public ResponseEntity<SuccessResponse<TerminalEDCResponseDTO>> getTerminalById(
+            @PathVariable String terminalId) {
+        TerminalEDCResponseDTO responseDTO = terminalEDCService.getTerminalById(terminalId);
+        SuccessResponse<TerminalEDCResponseDTO> response = SuccessResponse.<TerminalEDCResponseDTO>builder()
+                .message("Terminal retrieved successfully")
                 .data(responseDTO)
                 .build();
         return ResponseEntity.ok(response);
