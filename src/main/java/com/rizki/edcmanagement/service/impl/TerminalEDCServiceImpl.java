@@ -185,4 +185,16 @@ public class TerminalEDCServiceImpl implements TerminalEDCService {
         // Convert entity to DTO and return
         return terminalEDCMapper.fromTerminalEDCToResponse(updatedTerminal);
     }
+
+    @Override
+    @Transactional
+    public void deleteTerminal(String terminalId) {
+        // Find existing terminal to ensure it exists
+        TerminalEDC existingTerminal = terminalRepository.findById(terminalId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Terminal EDC with ID '" + terminalId + "' not found"));
+
+        // Delete the terminal
+        terminalRepository.delete(existingTerminal);
+    }
 }

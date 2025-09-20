@@ -14,4 +14,6 @@ public interface TerminalEDCService {
     TerminalEDCResponseDTO getTerminalById(String terminalId);
 
     TerminalEDCResponseDTO updateTerminal(String terminalId, UpdateTerminalEDCRequestDTO requestDTO);
+
+    void deleteTerminal(String terminalId);
 }

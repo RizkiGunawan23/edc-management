@@ -3,6 +3,7 @@ package com.rizki.edcmanagement.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -71,5 +72,11 @@ public class TerminalController {
                 .data(responseDTO)
                 .build();
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{terminalId}")
+    public ResponseEntity<Void> deleteTerminal(@PathVariable String terminalId) {
+        terminalEDCService.deleteTerminal(terminalId);
+        return ResponseEntity.noContent().build();
     }
 }
