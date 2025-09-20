@@ -3,6 +3,8 @@ package com.rizki.edcmanagement.service.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.rizki.edcmanagement.dto.auth.request.RefreshRequestDTO;
@@ -36,6 +38,21 @@ public class AuthServiceImpl implements AuthService {
         private JwtService jwtService;
 
         @Override
+        public User getCurrentAuthenticatedUser() {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+                if (authentication == null || !authentication.isAuthenticated()) {
+                        throw new ResourceNotFoundException("User not authenticated");
+                }
+
+                String currentUsername = authentication.getName();
+
+                // Find user by username (from access token)
+                return repository.findByUsername(currentUsername)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        }
+
+        @Override
         @Transactional
         public SignUpResponseDTO signUp(SignUpRequestDTO requestDTO) {
                 repository.findByUsername(requestDTO.getUsername())
@@ -67,6 +84,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         @Override
+        @Transactional
         public SignInResponseDTO signIn(SignInRequestDTO requestDTO) {
                 User user = repository.findByUsername(requestDTO.getUsername())
                                 .orElseThrow(() -> new ResourceNotFoundException("Username or password is incorrect"));
@@ -93,11 +111,14 @@ public class AuthServiceImpl implements AuthService {
         }
 
         @Override
+        @Transactional
         public RefreshResponseDTO refresh(RefreshRequestDTO requestDTO) {
                 User user = repository.findByRefreshToken(requestDTO.getRefreshToken())
                                 .orElseThrow(() -> new ResourceNotFoundException("Invalid refresh token"));
 
                 if (jwtService.isTokenExpired(requestDTO.getRefreshToken())) {
+                        user.setRefreshToken(null);
+                        repository.save(user);
                         throw new ResourceNotFoundException("Refresh token has expired");
                 }
 
@@ -113,5 +134,19 @@ public class AuthServiceImpl implements AuthService {
                                 .user(userResponse)
                                 .tokens(tokenResponse)
                                 .build();
+        }
+
+        @Override
+        @Transactional
+        public void signOut() {
+                User user = getCurrentAuthenticatedUser();
+
+                // Verify that user has a refresh token (meaning they are logged in)
+                if (user.getRefreshToken() == null || user.getRefreshToken().isEmpty())
+                        throw new ResourceNotFoundException("User is not logged in");
+
+                // Clear the refresh token from database
+                user.setRefreshToken(null);
+                repository.save(user);
         }
 }

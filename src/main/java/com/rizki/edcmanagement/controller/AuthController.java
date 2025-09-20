@@ -55,4 +55,13 @@ public class AuthController {
                 .data(responseDTO).build();
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    @PostMapping("/sign-out")
+    public ResponseEntity<SuccessResponse<String>> signOut() {
+        authService.signOut();
+        SuccessResponse<String> response = SuccessResponse.<String>builder()
+                .message("User signed out successfully")
+                .build();
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 }

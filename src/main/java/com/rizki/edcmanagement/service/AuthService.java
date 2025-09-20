@@ -6,6 +6,7 @@ import com.rizki.edcmanagement.dto.auth.request.SignUpRequestDTO;
 import com.rizki.edcmanagement.dto.auth.response.RefreshResponseDTO;
 import com.rizki.edcmanagement.dto.auth.response.SignInResponseDTO;
 import com.rizki.edcmanagement.dto.auth.response.SignUpResponseDTO;
+import com.rizki.edcmanagement.model.User;
 
 public interface AuthService {
     SignUpResponseDTO signUp(SignUpRequestDTO requestDTO);
@@ -13,4 +14,8 @@ public interface AuthService {
     SignInResponseDTO signIn(SignInRequestDTO requestDTO);
 
     RefreshResponseDTO refresh(RefreshRequestDTO requestDTO);
+
+    void signOut();
+
+    User getCurrentAuthenticatedUser();
 }
