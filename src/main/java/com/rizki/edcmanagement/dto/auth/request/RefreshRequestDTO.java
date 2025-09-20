@@ -1,4 +1,6 @@
-package com.rizki.edcmanagement.dto.auth.response;
+package com.rizki.edcmanagement.dto.auth.request;
+
+import javax.validation.constraints.NotBlank;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TokenResponse {
-    private String accessToken;
+public class RefreshRequestDTO {
+    @NotBlank(message = "Refresh token is required")
     private String refreshToken;
 }

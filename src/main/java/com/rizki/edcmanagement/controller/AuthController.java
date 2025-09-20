@@ -6,8 +6,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.rizki.edcmanagement.dto.auth.request.RefreshRequestDTO;
 import com.rizki.edcmanagement.dto.auth.request.SignInRequestDTO;
 import com.rizki.edcmanagement.dto.auth.request.SignUpRequestDTO;
+import com.rizki.edcmanagement.dto.auth.response.RefreshResponseDTO;
 import com.rizki.edcmanagement.dto.auth.response.SignInResponseDTO;
 import com.rizki.edcmanagement.dto.auth.response.SignUpResponseDTO;
 import com.rizki.edcmanagement.dto.common.SuccessResponse;
@@ -41,6 +43,16 @@ public class AuthController {
                 .message("User sign in successfully")
                 .data(responseDTO)
                 .build();
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<SuccessResponse<RefreshResponseDTO>> refresh(
+            @Valid @RequestBody RefreshRequestDTO requestDTO) {
+        RefreshResponseDTO responseDTO = authService.refresh(requestDTO);
+        SuccessResponse<RefreshResponseDTO> response = SuccessResponse.<RefreshResponseDTO>builder()
+                .message("Token refreshed successfully")
+                .data(responseDTO).build();
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }

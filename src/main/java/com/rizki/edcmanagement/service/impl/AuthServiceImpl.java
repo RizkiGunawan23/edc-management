@@ -5,8 +5,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.rizki.edcmanagement.dto.auth.request.RefreshRequestDTO;
 import com.rizki.edcmanagement.dto.auth.request.SignInRequestDTO;
 import com.rizki.edcmanagement.dto.auth.request.SignUpRequestDTO;
+import com.rizki.edcmanagement.dto.auth.response.RefreshResponseDTO;
 import com.rizki.edcmanagement.dto.auth.response.SignInResponseDTO;
 import com.rizki.edcmanagement.dto.auth.response.SignUpResponseDTO;
 import com.rizki.edcmanagement.dto.auth.response.TokenResponse;
@@ -85,6 +87,29 @@ public class AuthServiceImpl implements AuthService {
                                 .build();
 
                 return SignInResponseDTO.builder()
+                                .user(userResponse)
+                                .tokens(tokenResponse)
+                                .build();
+        }
+
+        @Override
+        public RefreshResponseDTO refresh(RefreshRequestDTO requestDTO) {
+                User user = repository.findByRefreshToken(requestDTO.getRefreshToken())
+                                .orElseThrow(() -> new ResourceNotFoundException("Invalid refresh token"));
+
+                if (jwtService.isTokenExpired(requestDTO.getRefreshToken())) {
+                        throw new ResourceNotFoundException("Refresh token has expired");
+                }
+
+                String accessToken = jwtService.generateToken(user.getUsername(), user.getUserId());
+
+                TokenResponse tokenResponse = TokenResponse.builder()
+                                .accessToken(accessToken)
+                                .refreshToken(requestDTO.getRefreshToken())
+                                .build();
+                UserResponse userResponse = userMapper.fromUserToUserResponse(user);
+
+                return RefreshResponseDTO.builder()
                                 .user(userResponse)
                                 .tokens(tokenResponse)
                                 .build();
