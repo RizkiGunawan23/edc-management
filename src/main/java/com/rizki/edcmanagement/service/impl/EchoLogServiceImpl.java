@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.rizki.edcmanagement.dto.echo.request.EchoRequestDTO;
 import com.rizki.edcmanagement.dto.echo.response.EchoResponseDTO;
 import com.rizki.edcmanagement.exception.InvalidSignatureException;
-import com.rizki.edcmanagement.exception.NotFoundException;
+import com.rizki.edcmanagement.exception.ResourceNotFoundException;
 import com.rizki.edcmanagement.model.EchoLog;
 import com.rizki.edcmanagement.model.TerminalEDC;
 import com.rizki.edcmanagement.repository.EchoLogRepository;
@@ -47,7 +47,7 @@ public class EchoLogServiceImpl implements EchoLogService {
 
         // Find terminal
         TerminalEDC terminal = terminalEDCRepository.findById(requestDTO.getTerminalId())
-                .orElseThrow(() -> new NotFoundException("Terminal not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Terminal ID not found"));
 
         // Create echo log entry with current UTC instant - set timestamp manually
         EchoLog echoLog = EchoLog.builder()
