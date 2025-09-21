@@ -1,9 +1,8 @@
 package com.rizki.edcmanagement.controller;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,32 +25,30 @@ import com.rizki.edcmanagement.util.LoggingUtil;
 @RestController
 @RequestMapping("/api/edc")
 public class EchoController {
-    private static final Logger logger = LoggerFactory.getLogger(EchoController.class);
-
     @Autowired
     private EchoLogService echoLogService;
 
     @PostMapping("/echo")
     public ResponseEntity<SuccessResponse<EchoResponseDTO>> echo(@RequestHeader("Signature") String signature,
-            @Valid @RequestBody EchoRequestDTO requestDTO) {
+            @Valid @RequestBody EchoRequestDTO requestDTO, HttpServletRequest request) {
 
-        // Set correlation context untuk tracking
-        String correlationId = java.util.UUID.randomUUID().toString().substring(0, 8);
-        LoggingUtil.setCorrelationContext(correlationId, requestDTO.getTerminalId(), "ECHO_REQUEST");
+        String correlationId = LoggingUtil.generateCorrelationId();
+        String clientIp = LoggingUtil.getClientIpAddress(request);
+        LoggingUtil.setMDC(correlationId, clientIp, "EchoController");
 
         try {
-            LoggingUtil.logBusinessEvent(logger, "ECHO_REQUEST_RECEIVED",
-                    "TERMINAL_ID", requestDTO.getTerminalId(),
-                    "CORRELATION_ID", correlationId);
+            LoggingUtil.logBusinessEvent("ECHO_REQUEST_RECEIVED",
+                    "Echo request received for terminal: " + requestDTO.getTerminalId() +
+                            ", clientIp: " + clientIp);
 
             long startTime = System.currentTimeMillis();
             EchoResponseDTO response = echoLogService.createEchoLog(signature, requestDTO);
             long processingTime = System.currentTimeMillis() - startTime;
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_REQUEST_PROCESSED",
-                    "TERMINAL_ID", requestDTO.getTerminalId(),
-                    "PROCESSING_TIME_MS", processingTime,
-                    "STATUS", "SUCCESS");
+            LoggingUtil.logBusinessEvent("ECHO_REQUEST_PROCESSED",
+                    "Echo request processed successfully for terminal: " + requestDTO.getTerminalId() +
+                            ", processingTime: " + processingTime + "ms" +
+                            ", status: SUCCESS");
 
             LoggingUtil.logPerformance("ECHO_REQUEST", processingTime);
 
@@ -61,31 +58,32 @@ public class EchoController {
                     .build();
             return ResponseEntity.status(HttpStatus.CREATED).body(successResponse);
         } finally {
-            LoggingUtil.clearCorrelationContext();
+            LoggingUtil.clearMDC();
         }
     }
 
     @GetMapping("/echo-logs")
     public ResponseEntity<SuccessResponse<PagedEchoLogResponseDTO>> getAllEchoLogs(
-            @Valid @ModelAttribute GetEchoLogRequestDTO requestDTO) {
-        String correlationId = java.util.UUID.randomUUID().toString().substring(0, 8);
-        LoggingUtil.setCorrelationContext(correlationId, requestDTO.getTerminalId(), "ECHO_LOGS_QUERY");
+            @Valid @ModelAttribute GetEchoLogRequestDTO requestDTO, HttpServletRequest request) {
+        String correlationId = LoggingUtil.generateCorrelationId();
+        String clientIp = LoggingUtil.getClientIpAddress(request);
+        LoggingUtil.setMDC(correlationId, clientIp, "EchoController");
 
         try {
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_QUERY_STARTED",
-                    "TERMINAL_ID_FILTER", requestDTO.getTerminalId(),
-                    "PAGE", requestDTO.getPage(),
-                    "SIZE", requestDTO.getSize(),
-                    "CORRELATION_ID", correlationId);
+            LoggingUtil.logBusinessEvent("ECHO_LOGS_QUERY_STARTED",
+                    "Echo logs query started with filters - terminalId: " + requestDTO.getTerminalId() +
+                            ", page: " + requestDTO.getPage() +
+                            ", size: " + requestDTO.getSize() +
+                            ", clientIp: " + clientIp);
 
             long startTime = System.currentTimeMillis();
             PagedEchoLogResponseDTO responseDTO = echoLogService.getAllEchoLogs(requestDTO);
             long processingTime = System.currentTimeMillis() - startTime;
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_QUERY_COMPLETED",
-                    "RECORDS_RETURNED", responseDTO.getNumberOfElements(),
-                    "TOTAL_RECORDS", responseDTO.getTotalElements(),
-                    "PROCESSING_TIME_MS", processingTime);
+            LoggingUtil.logBusinessEvent("ECHO_LOGS_QUERY_COMPLETED",
+                    "Echo logs query completed - recordsReturned: " + responseDTO.getNumberOfElements() +
+                            ", totalRecords: " + responseDTO.getTotalElements() +
+                            ", processingTime: " + processingTime + "ms");
 
             LoggingUtil.logPerformance("ECHO_LOGS_QUERY", processingTime);
 
@@ -95,7 +93,7 @@ public class EchoController {
                     .build();
             return ResponseEntity.ok(response);
         } finally {
-            LoggingUtil.clearCorrelationContext();
+            LoggingUtil.clearMDC();
         }
     }
 }

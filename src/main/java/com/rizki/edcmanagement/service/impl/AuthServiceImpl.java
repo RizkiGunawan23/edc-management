@@ -1,7 +1,5 @@
 package com.rizki.edcmanagement.service.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,8 +24,6 @@ import com.rizki.edcmanagement.util.LoggingUtil;
 
 @Service
 public class AuthServiceImpl implements AuthService {
-        private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
-
         @Autowired
         private UserRepository repository;
 
@@ -58,46 +54,46 @@ public class AuthServiceImpl implements AuthService {
         @Override
         @Transactional
         public AuthResponseDTO signUp(SignUpRequestDTO requestDTO) {
-                LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_SIGNUP_STARTED",
+                LoggingUtil.logBusinessEvent("AUTH_SERVICE_SIGNUP_STARTED",
                                 "USERNAME", requestDTO.getUsername());
 
                 try {
                         // Check if username already exists
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_USERNAME_CHECK_STARTED",
+                        LoggingUtil.logBusinessEvent("AUTH_USERNAME_CHECK_STARTED",
                                         "USERNAME", requestDTO.getUsername());
 
                         repository.findByUsername(requestDTO.getUsername())
                                         .ifPresent(user -> {
-                                                LoggingUtil.logBusinessEvent(logger, "AUTH_USERNAME_ALREADY_EXISTS",
+                                                LoggingUtil.logBusinessEvent("AUTH_USERNAME_ALREADY_EXISTS",
                                                                 "USERNAME", requestDTO.getUsername());
                                                 throw new ResourceAlreadyExistsException("Username is already exists");
                                         });
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_USERNAME_AVAILABLE",
+                        LoggingUtil.logBusinessEvent("AUTH_USERNAME_AVAILABLE",
                                         "USERNAME", requestDTO.getUsername());
 
                         // Create user entity
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_USER_ENTITY_CREATION_STARTED",
+                        LoggingUtil.logBusinessEvent("AUTH_USER_ENTITY_CREATION_STARTED",
                                         "USERNAME", requestDTO.getUsername());
 
                         User user = userMapper.fromSignUpRequestToUser(requestDTO);
                         user.setPassword(passwordEncoder.encode(requestDTO.getPassword()));
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_USER_PASSWORD_ENCODED",
+                        LoggingUtil.logBusinessEvent("AUTH_USER_PASSWORD_ENCODED",
                                         "USERNAME", requestDTO.getUsername());
 
                         // Save user to database
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_USER_DATABASE_SAVE_STARTED",
+                        LoggingUtil.logBusinessEvent("AUTH_USER_DATABASE_SAVE_STARTED",
                                         "USERNAME", requestDTO.getUsername());
 
                         User savedUser = repository.save(user);
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_USER_DATABASE_SAVE_SUCCESS",
+                        LoggingUtil.logBusinessEvent("AUTH_USER_DATABASE_SAVE_SUCCESS",
                                         "USERNAME", requestDTO.getUsername(),
                                         "USER_ID", savedUser.getUserId());
 
                         // Generate tokens
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_TOKEN_GENERATION_STARTED",
+                        LoggingUtil.logBusinessEvent("AUTH_TOKEN_GENERATION_STARTED",
                                         "USERNAME", requestDTO.getUsername(),
                                         "USER_ID", savedUser.getUserId());
 
@@ -105,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
                         String refreshToken = jwtService.generateRefreshToken(savedUser.getUsername(),
                                         savedUser.getUserId());
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_TOKENS_GENERATED",
+                        LoggingUtil.logBusinessEvent("AUTH_TOKENS_GENERATED",
                                         "USERNAME", requestDTO.getUsername(),
                                         "USER_ID", savedUser.getUserId(),
                                         "ACCESS_TOKEN_LENGTH", accessToken.length(),
@@ -115,7 +111,7 @@ public class AuthServiceImpl implements AuthService {
                         savedUser.setRefreshToken(refreshToken);
                         User finalUser = repository.save(savedUser);
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_REFRESH_TOKEN_SAVED",
+                        LoggingUtil.logBusinessEvent("AUTH_REFRESH_TOKEN_SAVED",
                                         "USERNAME", requestDTO.getUsername(),
                                         "USER_ID", savedUser.getUserId());
 
@@ -131,7 +127,7 @@ public class AuthServiceImpl implements AuthService {
                                         .tokens(tokenResponse)
                                         .build();
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_SIGNUP_COMPLETED",
+                        LoggingUtil.logBusinessEvent("AUTH_SERVICE_SIGNUP_COMPLETED",
                                         "USERNAME", requestDTO.getUsername(),
                                         "USER_ID", savedUser.getUserId(),
                                         "STATUS", "SUCCESS");
@@ -139,13 +135,13 @@ public class AuthServiceImpl implements AuthService {
                         return response;
 
                 } catch (ResourceAlreadyExistsException e) {
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_SIGNUP_FAILED",
+                        LoggingUtil.logBusinessEvent("AUTH_SERVICE_SIGNUP_FAILED",
                                         "USERNAME", requestDTO.getUsername(),
                                         "ERROR", e.getClass().getSimpleName(),
                                         "MESSAGE", e.getMessage());
                         throw e;
                 } catch (Exception e) {
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_SIGNUP_ERROR",
+                        LoggingUtil.logBusinessEvent("AUTH_SERVICE_SIGNUP_ERROR",
                                         "USERNAME", requestDTO.getUsername(),
                                         "ERROR", e.getClass().getSimpleName(),
                                         "MESSAGE", e.getMessage());
@@ -156,48 +152,48 @@ public class AuthServiceImpl implements AuthService {
         @Override
         @Transactional
         public AuthResponseDTO signIn(SignInRequestDTO requestDTO) {
-                LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_SIGNIN_STARTED",
+                LoggingUtil.logBusinessEvent("AUTH_SERVICE_SIGNIN_STARTED",
                                 "USERNAME", requestDTO.getUsername());
 
                 try {
                         // Find user by username
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_USER_LOOKUP_STARTED",
+                        LoggingUtil.logBusinessEvent("AUTH_USER_LOOKUP_STARTED",
                                         "USERNAME", requestDTO.getUsername());
 
                         User user = repository.findByUsername(requestDTO.getUsername())
                                         .orElseThrow(() -> {
-                                                LoggingUtil.logBusinessEvent(logger, "AUTH_USER_NOT_FOUND",
+                                                LoggingUtil.logBusinessEvent("AUTH_USER_NOT_FOUND",
                                                                 "USERNAME", requestDTO.getUsername());
                                                 return new ResourceNotFoundException(
                                                                 "Username or password is incorrect");
                                         });
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_USER_FOUND",
+                        LoggingUtil.logBusinessEvent("AUTH_USER_FOUND",
                                         "USERNAME", requestDTO.getUsername(),
                                         "USER_ID", user.getUserId());
 
                         // Verify password
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_PASSWORD_VERIFICATION_STARTED",
+                        LoggingUtil.logBusinessEvent("AUTH_PASSWORD_VERIFICATION_STARTED",
                                         "USERNAME", requestDTO.getUsername());
 
                         if (!passwordEncoder.matches(requestDTO.getPassword(), user.getPassword())) {
-                                LoggingUtil.logBusinessEvent(logger, "AUTH_PASSWORD_VERIFICATION_FAILED",
+                                LoggingUtil.logBusinessEvent("AUTH_PASSWORD_VERIFICATION_FAILED",
                                                 "USERNAME", requestDTO.getUsername());
                                 throw new ResourceNotFoundException("Username or password is incorrect");
                         }
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_PASSWORD_VERIFICATION_SUCCESS",
+                        LoggingUtil.logBusinessEvent("AUTH_PASSWORD_VERIFICATION_SUCCESS",
                                         "USERNAME", requestDTO.getUsername());
 
                         // Generate tokens
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_TOKEN_GENERATION_STARTED",
+                        LoggingUtil.logBusinessEvent("AUTH_TOKEN_GENERATION_STARTED",
                                         "USERNAME", requestDTO.getUsername(),
                                         "USER_ID", user.getUserId());
 
                         String accessToken = jwtService.generateToken(user.getUsername(), user.getUserId());
                         String refreshToken = jwtService.generateRefreshToken(user.getUsername(), user.getUserId());
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_TOKENS_GENERATED",
+                        LoggingUtil.logBusinessEvent("AUTH_TOKENS_GENERATED",
                                         "USERNAME", requestDTO.getUsername(),
                                         "USER_ID", user.getUserId(),
                                         "ACCESS_TOKEN_LENGTH", accessToken.length(),
@@ -207,7 +203,7 @@ public class AuthServiceImpl implements AuthService {
                         user.setRefreshToken(refreshToken);
                         User modifiedUser = repository.save(user);
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_REFRESH_TOKEN_UPDATED",
+                        LoggingUtil.logBusinessEvent("AUTH_REFRESH_TOKEN_UPDATED",
                                         "USERNAME", requestDTO.getUsername(),
                                         "USER_ID", user.getUserId());
 
@@ -223,7 +219,7 @@ public class AuthServiceImpl implements AuthService {
                                         .tokens(tokenResponse)
                                         .build();
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_SIGNIN_COMPLETED",
+                        LoggingUtil.logBusinessEvent("AUTH_SERVICE_SIGNIN_COMPLETED",
                                         "USERNAME", requestDTO.getUsername(),
                                         "USER_ID", user.getUserId(),
                                         "STATUS", "SUCCESS");
@@ -231,13 +227,13 @@ public class AuthServiceImpl implements AuthService {
                         return response;
 
                 } catch (ResourceNotFoundException e) {
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_SIGNIN_FAILED",
+                        LoggingUtil.logBusinessEvent("AUTH_SERVICE_SIGNIN_FAILED",
                                         "USERNAME", requestDTO.getUsername(),
                                         "ERROR", e.getClass().getSimpleName(),
                                         "MESSAGE", e.getMessage());
                         throw e;
                 } catch (Exception e) {
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_SIGNIN_ERROR",
+                        LoggingUtil.logBusinessEvent("AUTH_SERVICE_SIGNIN_ERROR",
                                         "USERNAME", requestDTO.getUsername(),
                                         "ERROR", e.getClass().getSimpleName(),
                                         "MESSAGE", e.getMessage());
@@ -248,50 +244,50 @@ public class AuthServiceImpl implements AuthService {
         @Override
         @Transactional
         public AuthResponseDTO refresh(RefreshRequestDTO requestDTO) {
-                LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_REFRESH_STARTED");
+                LoggingUtil.logBusinessEvent("AUTH_SERVICE_REFRESH_STARTED");
 
                 try {
                         // Find user by refresh token
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_REFRESH_TOKEN_LOOKUP_STARTED");
+                        LoggingUtil.logBusinessEvent("AUTH_REFRESH_TOKEN_LOOKUP_STARTED");
 
                         User user = repository.findByRefreshToken(requestDTO.getRefreshToken())
                                         .orElseThrow(() -> {
-                                                LoggingUtil.logBusinessEvent(logger, "AUTH_REFRESH_TOKEN_INVALID");
+                                                LoggingUtil.logBusinessEvent("AUTH_REFRESH_TOKEN_INVALID");
                                                 return new ResourceNotFoundException("Invalid refresh token");
                                         });
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_REFRESH_TOKEN_USER_FOUND",
+                        LoggingUtil.logBusinessEvent("AUTH_REFRESH_TOKEN_USER_FOUND",
                                         "USERNAME", user.getUsername(),
                                         "USER_ID", user.getUserId());
 
                         // Check token expiration
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_REFRESH_TOKEN_EXPIRATION_CHECK_STARTED",
+                        LoggingUtil.logBusinessEvent("AUTH_REFRESH_TOKEN_EXPIRATION_CHECK_STARTED",
                                         "USERNAME", user.getUsername());
 
                         if (jwtService.isTokenExpired(requestDTO.getRefreshToken())) {
-                                LoggingUtil.logBusinessEvent(logger, "AUTH_REFRESH_TOKEN_EXPIRED",
+                                LoggingUtil.logBusinessEvent("AUTH_REFRESH_TOKEN_EXPIRED",
                                                 "USERNAME", user.getUsername());
 
                                 user.setRefreshToken(null);
                                 repository.save(user);
 
-                                LoggingUtil.logBusinessEvent(logger, "AUTH_EXPIRED_REFRESH_TOKEN_CLEARED",
+                                LoggingUtil.logBusinessEvent("AUTH_EXPIRED_REFRESH_TOKEN_CLEARED",
                                                 "USERNAME", user.getUsername());
 
                                 throw new ResourceNotFoundException("Refresh token has expired");
                         }
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_REFRESH_TOKEN_VALID",
+                        LoggingUtil.logBusinessEvent("AUTH_REFRESH_TOKEN_VALID",
                                         "USERNAME", user.getUsername());
 
                         // Generate new access token
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_NEW_ACCESS_TOKEN_GENERATION_STARTED",
+                        LoggingUtil.logBusinessEvent("AUTH_NEW_ACCESS_TOKEN_GENERATION_STARTED",
                                         "USERNAME", user.getUsername(),
                                         "USER_ID", user.getUserId());
 
                         String accessToken = jwtService.generateToken(user.getUsername(), user.getUserId());
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_NEW_ACCESS_TOKEN_GENERATED",
+                        LoggingUtil.logBusinessEvent("AUTH_NEW_ACCESS_TOKEN_GENERATED",
                                         "USERNAME", user.getUsername(),
                                         "USER_ID", user.getUserId(),
                                         "ACCESS_TOKEN_LENGTH", accessToken.length());
@@ -308,7 +304,7 @@ public class AuthServiceImpl implements AuthService {
                                         .tokens(tokenResponse)
                                         .build();
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_REFRESH_COMPLETED",
+                        LoggingUtil.logBusinessEvent("AUTH_SERVICE_REFRESH_COMPLETED",
                                         "USERNAME", user.getUsername(),
                                         "USER_ID", user.getUserId(),
                                         "STATUS", "SUCCESS");
@@ -316,12 +312,12 @@ public class AuthServiceImpl implements AuthService {
                         return response;
 
                 } catch (ResourceNotFoundException e) {
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_REFRESH_FAILED",
+                        LoggingUtil.logBusinessEvent("AUTH_SERVICE_REFRESH_FAILED",
                                         "ERROR", e.getClass().getSimpleName(),
                                         "MESSAGE", e.getMessage());
                         throw e;
                 } catch (Exception e) {
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_REFRESH_ERROR",
+                        LoggingUtil.logBusinessEvent("AUTH_SERVICE_REFRESH_ERROR",
                                         "ERROR", e.getClass().getSimpleName(),
                                         "MESSAGE", e.getMessage());
                         throw e;
@@ -331,27 +327,27 @@ public class AuthServiceImpl implements AuthService {
         @Override
         @Transactional
         public void signOut() {
-                LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_SIGNOUT_STARTED");
+                LoggingUtil.logBusinessEvent("AUTH_SERVICE_SIGNOUT_STARTED");
 
                 try {
                         // Get current authenticated user
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_CURRENT_USER_LOOKUP_STARTED");
+                        LoggingUtil.logBusinessEvent("AUTH_CURRENT_USER_LOOKUP_STARTED");
 
                         User user = getCurrentAuthenticatedUser();
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_CURRENT_USER_FOUND",
+                        LoggingUtil.logBusinessEvent("AUTH_CURRENT_USER_FOUND",
                                         "USERNAME", user.getUsername(),
                                         "USER_ID", user.getUserId());
 
                         // Verify that user has a refresh token (meaning they are logged in)
                         if (user.getRefreshToken() == null || user.getRefreshToken().isEmpty()) {
-                                LoggingUtil.logBusinessEvent(logger, "AUTH_USER_NOT_LOGGED_IN",
+                                LoggingUtil.logBusinessEvent("AUTH_USER_NOT_LOGGED_IN",
                                                 "USERNAME", user.getUsername(),
                                                 "USER_ID", user.getUserId());
                                 throw new ResourceNotFoundException("User is not logged in");
                         }
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_REFRESH_TOKEN_CLEAR_STARTED",
+                        LoggingUtil.logBusinessEvent("AUTH_REFRESH_TOKEN_CLEAR_STARTED",
                                         "USERNAME", user.getUsername(),
                                         "USER_ID", user.getUserId());
 
@@ -359,18 +355,18 @@ public class AuthServiceImpl implements AuthService {
                         user.setRefreshToken(null);
                         repository.save(user);
 
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_SIGNOUT_COMPLETED",
+                        LoggingUtil.logBusinessEvent("AUTH_SERVICE_SIGNOUT_COMPLETED",
                                         "USERNAME", user.getUsername(),
                                         "USER_ID", user.getUserId(),
                                         "STATUS", "SUCCESS");
 
                 } catch (ResourceNotFoundException e) {
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_SIGNOUT_FAILED",
+                        LoggingUtil.logBusinessEvent("AUTH_SERVICE_SIGNOUT_FAILED",
                                         "ERROR", e.getClass().getSimpleName(),
                                         "MESSAGE", e.getMessage());
                         throw e;
                 } catch (Exception e) {
-                        LoggingUtil.logBusinessEvent(logger, "AUTH_SERVICE_SIGNOUT_ERROR",
+                        LoggingUtil.logBusinessEvent("AUTH_SERVICE_SIGNOUT_ERROR",
                                         "ERROR", e.getClass().getSimpleName(),
                                         "MESSAGE", e.getMessage());
                         throw e;

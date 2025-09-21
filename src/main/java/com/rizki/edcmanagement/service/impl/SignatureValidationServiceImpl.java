@@ -5,8 +5,6 @@ import java.time.LocalDateTime;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +14,6 @@ import com.rizki.edcmanagement.util.LoggingUtil;
 
 @Service
 public class SignatureValidationServiceImpl implements SignatureValidationService {
-    private static final Logger logger = LoggerFactory.getLogger(SignatureValidationServiceImpl.class);
-
     @Value("${application.security.signature.secret-key}")
     private String secretKey;
 
@@ -33,63 +29,70 @@ public class SignatureValidationServiceImpl implements SignatureValidationServic
     }
 
     public boolean validateSignatureWithTolerance(String signature, String terminalId, LocalDateTime requestDateTime) {
-        LoggingUtil.logBusinessEvent(logger, "SIGNATURE_VALIDATION_STARTED",
-                "TERMINAL_ID", terminalId,
-                "REQUEST_TIME", requestDateTime,
-                "SIGNATURE_LENGTH", signature.length());
+        String correlationId = LoggingUtil.generateCorrelationId();
+        LoggingUtil.setMDC(correlationId, "unknown", "SignatureValidationService");
 
-        long validationStartTime = System.currentTimeMillis();
+        try {
+            LoggingUtil.logBusinessEvent("SIGNATURE_VALIDATION_STARTED",
+                    "Starting signature validation for terminal: " + terminalId +
+                            ", requestTime: " + requestDateTime +
+                            ", signatureLength: " + signature.length());
 
-        // Try with tolerance of ±2 minutes to account for time differences between
-        // Postman and server
-        for (int toleranceSeconds = -120; toleranceSeconds <= 120; toleranceSeconds += 1) {
-            LocalDateTime adjustedTime = requestDateTime.plusSeconds(toleranceSeconds);
+            long validationStartTime = System.currentTimeMillis();
 
-            try {
-                String dateTimeStr = adjustedTime.format(Formatter.DATETIME_FORMATTER);
-                String keyString = dateTimeStr + "|" + secretKey;
+            // Try with tolerance of ±2 minutes to account for time differences between
+            // Postman and server
+            for (int toleranceSeconds = -120; toleranceSeconds <= 120; toleranceSeconds += 1) {
+                LocalDateTime adjustedTime = requestDateTime.plusSeconds(toleranceSeconds);
 
-                // Generate signature with this format
-                Mac mac = Mac.getInstance(hashAlgorithm);
-                SecretKeySpec secretKeySpec = new SecretKeySpec(keyString.getBytes(StandardCharsets.UTF_8),
-                        hashAlgorithm);
-                mac.init(secretKeySpec);
-                byte[] signatureBytes = mac.doFinal(terminalId.getBytes(StandardCharsets.UTF_8));
-                String expectedSignature = bytesToHex(signatureBytes);
+                try {
+                    String dateTimeStr = adjustedTime.format(Formatter.DATETIME_FORMATTER);
+                    String keyString = dateTimeStr + "|" + secretKey;
 
-                if (expectedSignature.equals(signature)) {
-                    long validationTime = System.currentTimeMillis() - validationStartTime;
+                    // Generate signature with this format
+                    Mac mac = Mac.getInstance(hashAlgorithm);
+                    SecretKeySpec secretKeySpec = new SecretKeySpec(keyString.getBytes(StandardCharsets.UTF_8),
+                            hashAlgorithm);
+                    mac.init(secretKeySpec);
+                    byte[] signatureBytes = mac.doFinal(terminalId.getBytes(StandardCharsets.UTF_8));
+                    String expectedSignature = bytesToHex(signatureBytes);
 
-                    LoggingUtil.logBusinessEvent(logger, "SIGNATURE_VALIDATION_SUCCESS",
-                            "TERMINAL_ID", terminalId,
-                            "TOLERANCE_SECONDS", toleranceSeconds,
-                            "ADJUSTED_TIME", adjustedTime,
-                            "VALIDATION_TIME_MS", validationTime,
-                            "ALGORITHM", hashAlgorithm);
+                    if (expectedSignature.equals(signature)) {
+                        long validationTime = System.currentTimeMillis() - validationStartTime;
 
-                    LoggingUtil.logPerformance("SIGNATURE_VALIDATION", validationTime);
+                        LoggingUtil.logBusinessEvent("SIGNATURE_VALIDATION_SUCCESS",
+                                "Signature validation successful for terminal: " + terminalId +
+                                        ", toleranceSeconds: " + toleranceSeconds +
+                                        ", adjustedTime: " + adjustedTime +
+                                        ", validationTime: " + validationTime + "ms" +
+                                        ", algorithm: " + hashAlgorithm);
 
-                    return true;
+                        LoggingUtil.logPerformance("SIGNATURE_VALIDATION", validationTime);
+
+                        return true;
+                    }
+                } catch (Exception e) {
+                    LoggingUtil.logBusinessEvent("SIGNATURE_VALIDATION_ERROR",
+                            "Error during signature validation for terminal: " + terminalId +
+                                    ", toleranceSeconds: " + toleranceSeconds +
+                                    ", error: " + e.getClass().getSimpleName() +
+                                    ", message: " + e.getMessage());
                 }
-            } catch (Exception e) {
-                LoggingUtil.logBusinessEvent(logger, "SIGNATURE_VALIDATION_ERROR",
-                        "TERMINAL_ID", terminalId,
-                        "TOLERANCE_SECONDS", toleranceSeconds,
-                        "ERROR", e.getClass().getSimpleName(),
-                        "MESSAGE", e.getMessage());
             }
+
+            long validationTime = System.currentTimeMillis() - validationStartTime;
+
+            LoggingUtil.logBusinessEvent("SIGNATURE_VALIDATION_FAILED",
+                    "Signature validation failed for terminal: " + terminalId +
+                            ", totalAttempts: 241" + // -120 to +120 = 241 attempts
+                            ", validationTime: " + validationTime + "ms" +
+                            ", reason: No matching signature found within tolerance");
+
+            LoggingUtil.logPerformance("SIGNATURE_VALIDATION_FAILED", validationTime);
+
+            return false;
+        } finally {
+            LoggingUtil.clearMDC();
         }
-
-        long validationTime = System.currentTimeMillis() - validationStartTime;
-
-        LoggingUtil.logBusinessEvent(logger, "SIGNATURE_VALIDATION_FAILED",
-                "TERMINAL_ID", terminalId,
-                "TOTAL_ATTEMPTS", 241, // -120 to +120 = 241 attempts
-                "VALIDATION_TIME_MS", validationTime,
-                "REASON", "No matching signature found within tolerance");
-
-        LoggingUtil.logPerformance("SIGNATURE_VALIDATION_FAILED", validationTime);
-
-        return false;
     }
 }

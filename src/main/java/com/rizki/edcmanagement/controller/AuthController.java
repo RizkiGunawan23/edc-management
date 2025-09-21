@@ -1,7 +1,5 @@
 package com.rizki.edcmanagement.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,34 +23,30 @@ import javax.validation.Valid;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-
     @Autowired
     private AuthService authService;
 
     @PostMapping("/sign-up")
     public ResponseEntity<SuccessResponse<AuthResponseDTO>> signUp(
             @Valid @RequestBody SignUpRequestDTO requestDTO, HttpServletRequest request) {
-        // Set correlation context untuk tracking
-        String correlationId = java.util.UUID.randomUUID().toString().substring(0, 8);
-        String clientIp = getClientIpAddress(request);
-        LoggingUtil.setCorrelationContext(correlationId, requestDTO.getUsername(), "AUTH_SIGNUP");
+        String correlationId = LoggingUtil.generateCorrelationId();
+        String clientIp = LoggingUtil.getClientIpAddress(request);
+        LoggingUtil.setMDC(correlationId, clientIp, "AuthController");
 
         try {
-            LoggingUtil.logBusinessEvent(logger, "AUTH_SIGNUP_REQUEST_RECEIVED",
-                    "USERNAME", requestDTO.getUsername(),
-                    "CLIENT_IP", clientIp,
-                    "CORRELATION_ID", correlationId);
+            LoggingUtil.logBusinessEvent("AUTH_SIGNUP_REQUEST_RECEIVED",
+                    "Sign up request received for username: " + requestDTO.getUsername() +
+                            ", clientIp: " + clientIp);
 
             long startTime = System.currentTimeMillis();
             AuthResponseDTO responseDTO = authService.signUp(requestDTO);
             long processingTime = System.currentTimeMillis() - startTime;
 
-            LoggingUtil.logBusinessEvent(logger, "AUTH_SIGNUP_SUCCESS",
-                    "USERNAME", requestDTO.getUsername(),
-                    "USER_ID", responseDTO.getUser().getId(),
-                    "PROCESSING_TIME_MS", processingTime,
-                    "CLIENT_IP", clientIp);
+            LoggingUtil.logBusinessEvent("AUTH_SIGNUP_SUCCESS",
+                    "Sign up successful for username: " + requestDTO.getUsername() +
+                            ", userId: " + responseDTO.getUser().getId() +
+                            ", processingTime: " + processingTime + "ms" +
+                            ", clientIp: " + clientIp);
 
             LoggingUtil.logPerformance("AUTH_SIGNUP", processingTime);
 
@@ -62,39 +56,38 @@ public class AuthController {
                     .build();
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            LoggingUtil.logBusinessEvent(logger, "AUTH_SIGNUP_FAILED",
-                    "USERNAME", requestDTO.getUsername(),
-                    "ERROR", e.getClass().getSimpleName(),
-                    "MESSAGE", e.getMessage(),
-                    "CLIENT_IP", clientIp);
+            LoggingUtil.logBusinessEvent("AUTH_SIGNUP_FAILED",
+                    "Sign up failed for username: " + requestDTO.getUsername() +
+                            ", error: " + e.getClass().getSimpleName() +
+                            ", message: " + e.getMessage() +
+                            ", clientIp: " + clientIp);
             throw e;
         } finally {
-            LoggingUtil.clearCorrelationContext();
+            LoggingUtil.clearMDC();
         }
     }
 
     @PostMapping("/sign-in")
     public ResponseEntity<SuccessResponse<AuthResponseDTO>> signIn(
             @Valid @RequestBody SignInRequestDTO requestDTO, HttpServletRequest request) {
-        String correlationId = java.util.UUID.randomUUID().toString().substring(0, 8);
-        String clientIp = getClientIpAddress(request);
-        LoggingUtil.setCorrelationContext(correlationId, requestDTO.getUsername(), "AUTH_SIGNIN");
+        String correlationId = LoggingUtil.generateCorrelationId();
+        String clientIp = LoggingUtil.getClientIpAddress(request);
+        LoggingUtil.setMDC(correlationId, clientIp, "AuthController");
 
         try {
-            LoggingUtil.logBusinessEvent(logger, "AUTH_SIGNIN_REQUEST_RECEIVED",
-                    "USERNAME", requestDTO.getUsername(),
-                    "CLIENT_IP", clientIp,
-                    "CORRELATION_ID", correlationId);
+            LoggingUtil.logBusinessEvent("AUTH_SIGNIN_REQUEST_RECEIVED",
+                    "Sign in request received for username: " + requestDTO.getUsername() +
+                            ", clientIp: " + clientIp);
 
             long startTime = System.currentTimeMillis();
             AuthResponseDTO responseDTO = authService.signIn(requestDTO);
             long processingTime = System.currentTimeMillis() - startTime;
 
-            LoggingUtil.logBusinessEvent(logger, "AUTH_SIGNIN_SUCCESS",
-                    "USERNAME", requestDTO.getUsername(),
-                    "USER_ID", responseDTO.getUser().getId(),
-                    "PROCESSING_TIME_MS", processingTime,
-                    "CLIENT_IP", clientIp);
+            LoggingUtil.logBusinessEvent("AUTH_SIGNIN_SUCCESS",
+                    "Sign in successful for username: " + requestDTO.getUsername() +
+                            ", userId: " + responseDTO.getUser().getId() +
+                            ", processingTime: " + processingTime + "ms" +
+                            ", clientIp: " + clientIp);
 
             LoggingUtil.logPerformance("AUTH_SIGNIN", processingTime);
 
@@ -104,38 +97,37 @@ public class AuthController {
                     .build();
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e) {
-            LoggingUtil.logBusinessEvent(logger, "AUTH_SIGNIN_FAILED",
-                    "USERNAME", requestDTO.getUsername(),
-                    "ERROR", e.getClass().getSimpleName(),
-                    "MESSAGE", e.getMessage(),
-                    "CLIENT_IP", clientIp);
+            LoggingUtil.logBusinessEvent("AUTH_SIGNIN_FAILED",
+                    "Sign in failed for username: " + requestDTO.getUsername() +
+                            ", error: " + e.getClass().getSimpleName() +
+                            ", message: " + e.getMessage() +
+                            ", clientIp: " + clientIp);
             throw e;
         } finally {
-            LoggingUtil.clearCorrelationContext();
+            LoggingUtil.clearMDC();
         }
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<SuccessResponse<AuthResponseDTO>> refresh(
             @Valid @RequestBody RefreshRequestDTO requestDTO, HttpServletRequest request) {
-        String correlationId = java.util.UUID.randomUUID().toString().substring(0, 8);
-        String clientIp = getClientIpAddress(request);
-        LoggingUtil.setCorrelationContext(correlationId, "REFRESH_TOKEN_USER", "AUTH_REFRESH");
+        String correlationId = LoggingUtil.generateCorrelationId();
+        String clientIp = LoggingUtil.getClientIpAddress(request);
+        LoggingUtil.setMDC(correlationId, clientIp, "AuthController");
 
         try {
-            LoggingUtil.logBusinessEvent(logger, "AUTH_REFRESH_REQUEST_RECEIVED",
-                    "CLIENT_IP", clientIp,
-                    "CORRELATION_ID", correlationId);
+            LoggingUtil.logBusinessEvent("AUTH_REFRESH_REQUEST_RECEIVED",
+                    "Token refresh request received, clientIp: " + clientIp);
 
             long startTime = System.currentTimeMillis();
             AuthResponseDTO responseDTO = authService.refresh(requestDTO);
             long processingTime = System.currentTimeMillis() - startTime;
 
-            LoggingUtil.logBusinessEvent(logger, "AUTH_REFRESH_SUCCESS",
-                    "USER_ID", responseDTO.getUser().getId(),
-                    "USERNAME", responseDTO.getUser().getUsername(),
-                    "PROCESSING_TIME_MS", processingTime,
-                    "CLIENT_IP", clientIp);
+            LoggingUtil.logBusinessEvent("AUTH_REFRESH_SUCCESS",
+                    "Token refresh successful for userId: " + responseDTO.getUser().getId() +
+                            ", username: " + responseDTO.getUser().getUsername() +
+                            ", processingTime: " + processingTime + "ms" +
+                            ", clientIp: " + clientIp);
 
             LoggingUtil.logPerformance("AUTH_REFRESH", processingTime);
 
@@ -144,34 +136,33 @@ public class AuthController {
                     .data(responseDTO).build();
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e) {
-            LoggingUtil.logBusinessEvent(logger, "AUTH_REFRESH_FAILED",
-                    "ERROR", e.getClass().getSimpleName(),
-                    "MESSAGE", e.getMessage(),
-                    "CLIENT_IP", clientIp);
+            LoggingUtil.logBusinessEvent("AUTH_REFRESH_FAILED",
+                    "Token refresh failed, error: " + e.getClass().getSimpleName() +
+                            ", message: " + e.getMessage() +
+                            ", clientIp: " + clientIp);
             throw e;
         } finally {
-            LoggingUtil.clearCorrelationContext();
+            LoggingUtil.clearMDC();
         }
     }
 
     @PostMapping("/sign-out")
     public ResponseEntity<SuccessResponse<String>> signOut(HttpServletRequest request) {
-        String correlationId = java.util.UUID.randomUUID().toString().substring(0, 8);
-        String clientIp = getClientIpAddress(request);
-        LoggingUtil.setCorrelationContext(correlationId, "AUTHENTICATED_USER", "AUTH_SIGNOUT");
+        String correlationId = LoggingUtil.generateCorrelationId();
+        String clientIp = LoggingUtil.getClientIpAddress(request);
+        LoggingUtil.setMDC(correlationId, clientIp, "AuthController");
 
         try {
-            LoggingUtil.logBusinessEvent(logger, "AUTH_SIGNOUT_REQUEST_RECEIVED",
-                    "CLIENT_IP", clientIp,
-                    "CORRELATION_ID", correlationId);
+            LoggingUtil.logBusinessEvent("AUTH_SIGNOUT_REQUEST_RECEIVED",
+                    "Sign out request received, clientIp: " + clientIp);
 
             long startTime = System.currentTimeMillis();
             authService.signOut();
             long processingTime = System.currentTimeMillis() - startTime;
 
-            LoggingUtil.logBusinessEvent(logger, "AUTH_SIGNOUT_SUCCESS",
-                    "PROCESSING_TIME_MS", processingTime,
-                    "CLIENT_IP", clientIp);
+            LoggingUtil.logBusinessEvent("AUTH_SIGNOUT_SUCCESS",
+                    "Sign out successful, processingTime: " + processingTime + "ms" +
+                            ", clientIp: " + clientIp);
 
             LoggingUtil.logPerformance("AUTH_SIGNOUT", processingTime);
 
@@ -180,28 +171,13 @@ public class AuthController {
                     .build();
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e) {
-            LoggingUtil.logBusinessEvent(logger, "AUTH_SIGNOUT_FAILED",
-                    "ERROR", e.getClass().getSimpleName(),
-                    "MESSAGE", e.getMessage(),
-                    "CLIENT_IP", clientIp);
+            LoggingUtil.logBusinessEvent("AUTH_SIGNOUT_FAILED",
+                    "Sign out failed, error: " + e.getClass().getSimpleName() +
+                            ", message: " + e.getMessage() +
+                            ", clientIp: " + clientIp);
             throw e;
         } finally {
-            LoggingUtil.clearCorrelationContext();
+            LoggingUtil.clearMDC();
         }
-    }
-
-    // Helper method untuk mendapatkan client IP address
-    private String getClientIpAddress(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty() && !"unknown".equalsIgnoreCase(xForwardedFor)) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty() && !"unknown".equalsIgnoreCase(xRealIp)) {
-            return xRealIp;
-        }
-
-        return request.getRemoteAddr();
     }
 }

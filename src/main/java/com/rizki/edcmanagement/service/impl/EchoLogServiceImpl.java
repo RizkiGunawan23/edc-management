@@ -6,8 +6,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,8 +32,6 @@ import com.rizki.edcmanagement.util.LoggingUtil;
 
 @Service
 public class EchoLogServiceImpl implements EchoLogService {
-    private static final Logger logger = LoggerFactory.getLogger(EchoLogServiceImpl.class);
-
     @Autowired
     private EchoLogRepository echoLogRepository;
 
@@ -48,7 +44,7 @@ public class EchoLogServiceImpl implements EchoLogService {
     @Override
     @Transactional
     public EchoResponseDTO createEchoLog(String signature, EchoRequestDTO requestDTO) {
-        LoggingUtil.logBusinessEvent(logger, "ECHO_SERVICE_CREATE_STARTED",
+        LoggingUtil.logBusinessEvent("ECHO_SERVICE_CREATE_STARTED",
                 "TERMINAL_ID", requestDTO.getTerminalId());
 
         try {
@@ -56,7 +52,7 @@ public class EchoLogServiceImpl implements EchoLogService {
             Instant now = Instant.now();
             LocalDateTime requestTime = LocalDateTime.ofInstant(now, ZoneOffset.UTC);
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_SIGNATURE_VALIDATION_STARTED",
+            LoggingUtil.logBusinessEvent("ECHO_SIGNATURE_VALIDATION_STARTED",
                     "TERMINAL_ID", requestDTO.getTerminalId(),
                     "REQUEST_TIME", requestTime);
 
@@ -65,27 +61,27 @@ public class EchoLogServiceImpl implements EchoLogService {
                     signature, requestDTO.getTerminalId(), requestTime);
 
             if (!isValidSignature) {
-                LoggingUtil.logBusinessEvent(logger, "ECHO_SIGNATURE_VALIDATION_FAILED",
+                LoggingUtil.logBusinessEvent("ECHO_SIGNATURE_VALIDATION_FAILED",
                         "TERMINAL_ID", requestDTO.getTerminalId(),
                         "REASON", "Invalid signature");
                 throw new InvalidSignatureException("Invalid signature");
             }
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_SIGNATURE_VALIDATION_SUCCESS",
+            LoggingUtil.logBusinessEvent("ECHO_SIGNATURE_VALIDATION_SUCCESS",
                     "TERMINAL_ID", requestDTO.getTerminalId());
 
             // Find terminal
-            LoggingUtil.logBusinessEvent(logger, "ECHO_TERMINAL_LOOKUP_STARTED",
+            LoggingUtil.logBusinessEvent("ECHO_TERMINAL_LOOKUP_STARTED",
                     "TERMINAL_ID", requestDTO.getTerminalId());
 
             TerminalEDC terminal = terminalEDCRepository.findById(requestDTO.getTerminalId())
                     .orElseThrow(() -> {
-                        LoggingUtil.logBusinessEvent(logger, "ECHO_TERMINAL_NOT_FOUND",
+                        LoggingUtil.logBusinessEvent("ECHO_TERMINAL_NOT_FOUND",
                                 "TERMINAL_ID", requestDTO.getTerminalId());
                         return new ResourceNotFoundException("Terminal ID not found");
                     });
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_TERMINAL_FOUND",
+            LoggingUtil.logBusinessEvent("ECHO_TERMINAL_FOUND",
                     "TERMINAL_ID", requestDTO.getTerminalId(),
                     "TERMINAL_STATUS", terminal.getStatus());
 
@@ -95,13 +91,13 @@ public class EchoLogServiceImpl implements EchoLogService {
                     .timestamp(now) // Set timestamp manually from server
                     .build();
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOG_SAVE_STARTED",
+            LoggingUtil.logBusinessEvent("ECHO_LOG_SAVE_STARTED",
                     "TERMINAL_ID", requestDTO.getTerminalId());
 
             // Save to database
             EchoLog saved = echoLogRepository.save(echoLog);
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOG_SAVE_SUCCESS",
+            LoggingUtil.logBusinessEvent("ECHO_LOG_SAVE_SUCCESS",
                     "TERMINAL_ID", requestDTO.getTerminalId(),
                     "ECHO_LOG_ID", saved.getId(),
                     "TIMESTAMP", saved.getTimestamp());
@@ -113,7 +109,7 @@ public class EchoLogServiceImpl implements EchoLogService {
                     .timestamp(LocalDateTime.ofInstant(saved.getTimestamp(), ZoneOffset.UTC))
                     .build();
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_SERVICE_CREATE_COMPLETED",
+            LoggingUtil.logBusinessEvent("ECHO_SERVICE_CREATE_COMPLETED",
                     "TERMINAL_ID", requestDTO.getTerminalId(),
                     "ECHO_LOG_ID", saved.getId(),
                     "STATUS", "SUCCESS");
@@ -121,13 +117,13 @@ public class EchoLogServiceImpl implements EchoLogService {
             return response;
 
         } catch (InvalidSignatureException | ResourceNotFoundException e) {
-            LoggingUtil.logBusinessEvent(logger, "ECHO_SERVICE_CREATE_FAILED",
+            LoggingUtil.logBusinessEvent("ECHO_SERVICE_CREATE_FAILED",
                     "TERMINAL_ID", requestDTO.getTerminalId(),
                     "ERROR", e.getClass().getSimpleName(),
                     "MESSAGE", e.getMessage());
             throw e;
         } catch (Exception e) {
-            LoggingUtil.logBusinessEvent(logger, "ECHO_SERVICE_CREATE_ERROR",
+            LoggingUtil.logBusinessEvent("ECHO_SERVICE_CREATE_ERROR",
                     "TERMINAL_ID", requestDTO.getTerminalId(),
                     "ERROR", e.getClass().getSimpleName(),
                     "MESSAGE", e.getMessage());
@@ -138,7 +134,7 @@ public class EchoLogServiceImpl implements EchoLogService {
     @Override
     @Transactional(readOnly = true)
     public PagedEchoLogResponseDTO getAllEchoLogs(GetEchoLogRequestDTO requestDTO) {
-        LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_SERVICE_QUERY_STARTED",
+        LoggingUtil.logBusinessEvent("ECHO_LOGS_SERVICE_QUERY_STARTED",
                 "TERMINAL_ID_FILTER", requestDTO.getTerminalId(),
                 "PAGE", requestDTO.getPage(),
                 "SIZE", requestDTO.getSize(),
@@ -151,37 +147,37 @@ public class EchoLogServiceImpl implements EchoLogService {
                     : Sort.Direction.DESC;
             Sort sort = Sort.by(direction, requestDTO.getSortBy());
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_SORT_CONFIGURED",
+            LoggingUtil.logBusinessEvent("ECHO_LOGS_SORT_CONFIGURED",
                     "SORT_FIELD", requestDTO.getSortBy(),
                     "SORT_DIRECTION", direction.toString());
 
             // Build pageable
             Pageable pageable = PageRequest.of(requestDTO.getPage(), requestDTO.getSize(), sort);
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_PAGINATION_CONFIGURED",
+            LoggingUtil.logBusinessEvent("ECHO_LOGS_PAGINATION_CONFIGURED",
                     "PAGE", requestDTO.getPage(),
                     "SIZE", requestDTO.getSize());
 
             // Build specification for filtering
             Specification<EchoLog> specification = EchoLogSpecification.buildSpecification(requestDTO);
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_FILTERS_APPLIED",
+            LoggingUtil.logBusinessEvent("ECHO_LOGS_FILTERS_APPLIED",
                     "TERMINAL_ID_FILTER", requestDTO.getTerminalId(),
                     "TIMESTAMP_FROM", requestDTO.getTimestampFrom(),
                     "TIMESTAMP_TO", requestDTO.getTimestampTo());
 
             // Execute query
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_DATABASE_QUERY_STARTED");
+            LoggingUtil.logBusinessEvent("ECHO_LOGS_DATABASE_QUERY_STARTED");
 
             Page<EchoLog> echoLogPage = echoLogRepository.findAll(specification, pageable);
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_DATABASE_QUERY_COMPLETED",
+            LoggingUtil.logBusinessEvent("ECHO_LOGS_DATABASE_QUERY_COMPLETED",
                     "TOTAL_ELEMENTS", echoLogPage.getTotalElements(),
                     "TOTAL_PAGES", echoLogPage.getTotalPages(),
                     "NUMBER_OF_ELEMENTS", echoLogPage.getNumberOfElements());
 
             // Convert entities to DTOs
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_DTO_MAPPING_STARTED",
+            LoggingUtil.logBusinessEvent("ECHO_LOGS_DTO_MAPPING_STARTED",
                     "RECORDS_TO_MAP", echoLogPage.getNumberOfElements());
 
             List<EchoResponseDTO> echoLogDTOs = echoLogPage.getContent()
@@ -193,13 +189,13 @@ public class EchoLogServiceImpl implements EchoLogService {
                             .build())
                     .collect(Collectors.toList());
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_DTO_MAPPING_COMPLETED",
+            LoggingUtil.logBusinessEvent("ECHO_LOGS_DTO_MAPPING_COMPLETED",
                     "MAPPED_RECORDS", echoLogDTOs.size());
 
             // Build applied filters description
             String appliedFilters = EchoLogSpecification.buildAppliedFiltersDescription(requestDTO);
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_FILTERS_DESCRIPTION",
+            LoggingUtil.logBusinessEvent("ECHO_LOGS_FILTERS_DESCRIPTION",
                     "APPLIED_FILTERS", appliedFilters);
 
             // Build response
@@ -219,7 +215,7 @@ public class EchoLogServiceImpl implements EchoLogService {
                     .appliedFilters(appliedFilters)
                     .build();
 
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_SERVICE_QUERY_COMPLETED",
+            LoggingUtil.logBusinessEvent("ECHO_LOGS_SERVICE_QUERY_COMPLETED",
                     "RETURNED_RECORDS", response.getNumberOfElements(),
                     "TOTAL_AVAILABLE", response.getTotalElements(),
                     "STATUS", "SUCCESS");
@@ -227,7 +223,7 @@ public class EchoLogServiceImpl implements EchoLogService {
             return response;
 
         } catch (Exception e) {
-            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_SERVICE_QUERY_ERROR",
+            LoggingUtil.logBusinessEvent("ECHO_LOGS_SERVICE_QUERY_ERROR",
                     "ERROR", e.getClass().getSimpleName(),
                     "MESSAGE", e.getMessage());
             throw e;

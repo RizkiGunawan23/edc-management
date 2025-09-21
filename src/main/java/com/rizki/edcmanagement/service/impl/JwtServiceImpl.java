@@ -5,8 +5,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -20,8 +18,6 @@ import io.jsonwebtoken.security.Keys;
 
 @Service
 public class JwtServiceImpl implements JwtService {
-    private static final Logger logger = LoggerFactory.getLogger(JwtServiceImpl.class);
-
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
 
@@ -41,16 +37,16 @@ public class JwtServiceImpl implements JwtService {
     }
 
     public String generateToken(String username, Long userId) {
-        LoggingUtil.logBusinessEvent(logger, "JWT_ACCESS_TOKEN_GENERATION_STARTED",
-                "USERNAME", username,
-                "USER_ID", userId);
+        LoggingUtil.logBusinessEvent("JWT_ACCESS_TOKEN_GENERATION_STARTED",
+                "username", username,
+                "userId", userId.toString());
 
         try {
             Map<String, Object> claims = new HashMap<>();
             claims.put("userId", userId);
             String token = createToken(claims, username, JWT_EXPIRATION);
 
-            LoggingUtil.logBusinessEvent(logger, "JWT_ACCESS_TOKEN_GENERATION_SUCCESS",
+            LoggingUtil.logBusinessEvent("JWT_ACCESS_TOKEN_GENERATION_SUCCESS",
                     "USERNAME", username,
                     "USER_ID", userId,
                     "TOKEN_LENGTH", token.length(),
@@ -58,7 +54,7 @@ public class JwtServiceImpl implements JwtService {
 
             return token;
         } catch (Exception e) {
-            LoggingUtil.logBusinessEvent(logger, "JWT_ACCESS_TOKEN_GENERATION_ERROR",
+            LoggingUtil.logBusinessEvent("JWT_ACCESS_TOKEN_GENERATION_ERROR",
                     "USERNAME", username,
                     "USER_ID", userId,
                     "ERROR", e.getClass().getSimpleName(),
@@ -68,7 +64,7 @@ public class JwtServiceImpl implements JwtService {
     }
 
     public String generateRefreshToken(String username, Long userId) {
-        LoggingUtil.logBusinessEvent(logger, "JWT_REFRESH_TOKEN_GENERATION_STARTED",
+        LoggingUtil.logBusinessEvent("JWT_REFRESH_TOKEN_GENERATION_STARTED",
                 "USERNAME", username,
                 "USER_ID", userId);
 
@@ -77,7 +73,7 @@ public class JwtServiceImpl implements JwtService {
             claims.put("userId", userId);
             String token = createToken(claims, username, REFRESH_EXPIRATION);
 
-            LoggingUtil.logBusinessEvent(logger, "JWT_REFRESH_TOKEN_GENERATION_SUCCESS",
+            LoggingUtil.logBusinessEvent("JWT_REFRESH_TOKEN_GENERATION_SUCCESS",
                     "USERNAME", username,
                     "USER_ID", userId,
                     "TOKEN_LENGTH", token.length(),
@@ -85,7 +81,7 @@ public class JwtServiceImpl implements JwtService {
 
             return token;
         } catch (Exception e) {
-            LoggingUtil.logBusinessEvent(logger, "JWT_REFRESH_TOKEN_GENERATION_ERROR",
+            LoggingUtil.logBusinessEvent("JWT_REFRESH_TOKEN_GENERATION_ERROR",
                     "USERNAME", username,
                     "USER_ID", userId,
                     "ERROR", e.getClass().getSimpleName(),
@@ -105,7 +101,7 @@ public class JwtServiceImpl implements JwtService {
     }
 
     public boolean isTokenValid(String token) {
-        LoggingUtil.logBusinessEvent(logger, "JWT_TOKEN_VALIDATION_STARTED",
+        LoggingUtil.logBusinessEvent("JWT_TOKEN_VALIDATION_STARTED",
                 "TOKEN_LENGTH", token.length());
 
         try {
@@ -114,12 +110,12 @@ public class JwtServiceImpl implements JwtService {
                     .build()
                     .parseClaimsJws(token);
 
-            LoggingUtil.logBusinessEvent(logger, "JWT_TOKEN_VALIDATION_SUCCESS",
+            LoggingUtil.logBusinessEvent("JWT_TOKEN_VALIDATION_SUCCESS",
                     "TOKEN_LENGTH", token.length());
 
             return true;
         } catch (Exception e) {
-            LoggingUtil.logBusinessEvent(logger, "JWT_TOKEN_VALIDATION_FAILED",
+            LoggingUtil.logBusinessEvent("JWT_TOKEN_VALIDATION_FAILED",
                     "TOKEN_LENGTH", token.length(),
                     "ERROR", e.getClass().getSimpleName(),
                     "MESSAGE", e.getMessage());
@@ -129,7 +125,7 @@ public class JwtServiceImpl implements JwtService {
     }
 
     public boolean isTokenExpired(String token) {
-        LoggingUtil.logBusinessEvent(logger, "JWT_TOKEN_EXPIRATION_CHECK_STARTED",
+        LoggingUtil.logBusinessEvent("JWT_TOKEN_EXPIRATION_CHECK_STARTED",
                 "TOKEN_LENGTH", token.length());
 
         try {
@@ -141,14 +137,14 @@ public class JwtServiceImpl implements JwtService {
 
             boolean isExpired = claims.getExpiration().before(new Date());
 
-            LoggingUtil.logBusinessEvent(logger, "JWT_TOKEN_EXPIRATION_CHECK_COMPLETED",
+            LoggingUtil.logBusinessEvent("JWT_TOKEN_EXPIRATION_CHECK_COMPLETED",
                     "TOKEN_LENGTH", token.length(),
                     "IS_EXPIRED", isExpired,
                     "EXPIRATION_DATE", claims.getExpiration());
 
             return isExpired;
         } catch (Exception e) {
-            LoggingUtil.logBusinessEvent(logger, "JWT_TOKEN_EXPIRATION_CHECK_ERROR",
+            LoggingUtil.logBusinessEvent("JWT_TOKEN_EXPIRATION_CHECK_ERROR",
                     "TOKEN_LENGTH", token.length(),
                     "ERROR", e.getClass().getSimpleName(),
                     "MESSAGE", e.getMessage());
