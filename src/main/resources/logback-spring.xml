@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Define log directory -->
+    <property name="LOG_DIR" value="./logs"/>
+    <property name="LOG_FILE" value="${LOG_DIR}/edc-management"/>
+    
+    <!-- Console Appender for development (minimal) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{15} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <!-- Business Logic File Appender (Clean and focused) -->
+    <appender name="BUSINESS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}.log</file>
+        
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd-HH}.log.gz</fileNamePattern>
+            <maxHistory>72</maxHistory> <!-- Keep 72 hours (3 days) -->
+            <totalSizeCap>2GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %-5level | %logger{25} | [%X{correlationId:-}] [%X{terminalId:-}] | %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <!-- Performance Logger -->
+    <appender name="PERFORMANCE_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/performance.log</file>
+        
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/performance.%d{yyyy-MM-dd-HH}.log.gz</fileNamePattern>
+            <maxHistory>48</maxHistory> <!-- Keep 48 hours (2 days) -->
+            <totalSizeCap>1GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <!-- Audit Logger -->
+    <appender name="AUDIT_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/audit.log</file>
+        
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/audit.%d{yyyy-MM-dd-HH}.log.gz</fileNamePattern>
+            <maxHistory>168</maxHistory> <!-- Keep 168 hours (7 days) for audit compliance -->
+            <totalSizeCap>5GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | [%X{correlationId:-}] [%X{terminalId:-}] | %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <!-- Application-specific loggers with clean output -->
+    <logger name="com.rizki.edcmanagement.controller" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="BUSINESS_FILE"/>
+    </logger>
+    
+    <logger name="com.rizki.edcmanagement.service" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="BUSINESS_FILE"/>
+    </logger>
+    
+    <!-- Specialized loggers -->
+    <logger name="PERFORMANCE" level="INFO" additivity="false">
+        <appender-ref ref="PERFORMANCE_FILE"/>
+    </logger>
+    
+    <logger name="AUDIT" level="INFO" additivity="false">
+        <appender-ref ref="AUDIT_FILE"/>
+    </logger>
+    
+    <!-- Suppress noisy framework logs -->
+    <logger name="org.springframework" level="WARN" additivity="false">
+        <appender-ref ref="BUSINESS_FILE"/>
+    </logger>
+    
+    <logger name="org.hibernate" level="WARN" additivity="false">
+        <appender-ref ref="BUSINESS_FILE"/>
+    </logger>
+    
+    <logger name="com.zaxxer.hikari" level="WARN" additivity="false">
+        <appender-ref ref="BUSINESS_FILE"/>
+    </logger>
+    
+    <logger name="org.apache.catalina" level="WARN" additivity="false">
+        <appender-ref ref="BUSINESS_FILE"/>
+    </logger>
+    
+    <!-- Suppress DevTools noise -->
+    <logger name="org.springframework.boot.devtools" level="WARN" additivity="false">
+        <appender-ref ref="BUSINESS_FILE"/>
+    </logger>
+    
+    <!-- Root logger (minimal for everything else) -->
+    <root level="WARN">
+        <appender-ref ref="BUSINESS_FILE"/>
+    </root>
+    
+    <!-- Profile-specific configurations -->
+    <springProfile name="prod">
+        <logger name="com.rizki.edcmanagement" level="INFO" additivity="false">
+            <appender-ref ref="BUSINESS_FILE"/>
+        </logger>
+        
+        <root level="ERROR">
+            <appender-ref ref="BUSINESS_FILE"/>
+        </root>
+    </springProfile>
+    
+    <springProfile name="dev">
+        <logger name="com.rizki.edcmanagement" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="BUSINESS_FILE"/>
+        </logger>
+    </springProfile>
+</configuration>

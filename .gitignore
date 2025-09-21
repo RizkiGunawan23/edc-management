@@ -34,3 +34,7 @@ build/
 
 ### Test Data Files ###
 *.json
+
+# Logs
+*.log
+logs/

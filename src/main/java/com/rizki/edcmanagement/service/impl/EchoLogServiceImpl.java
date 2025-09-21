@@ -6,6 +6,8 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,9 +30,12 @@ import com.rizki.edcmanagement.repository.TerminalEDCRepository;
 import com.rizki.edcmanagement.service.EchoLogService;
 import com.rizki.edcmanagement.service.SignatureValidationService;
 import com.rizki.edcmanagement.specification.EchoLogSpecification;
+import com.rizki.edcmanagement.util.LoggingUtil;
 
 @Service
 public class EchoLogServiceImpl implements EchoLogService {
+    private static final Logger logger = LoggerFactory.getLogger(EchoLogServiceImpl.class);
+
     @Autowired
     private EchoLogRepository echoLogRepository;
 
@@ -43,84 +48,189 @@ public class EchoLogServiceImpl implements EchoLogService {
     @Override
     @Transactional
     public EchoResponseDTO createEchoLog(String signature, EchoRequestDTO requestDTO) {
-        // Use current UTC time for signature validation
-        Instant now = Instant.now();
-        LocalDateTime requestTime = LocalDateTime.ofInstant(now, ZoneOffset.UTC);
+        LoggingUtil.logBusinessEvent(logger, "ECHO_SERVICE_CREATE_STARTED",
+                "TERMINAL_ID", requestDTO.getTerminalId());
 
-        // Validate signature using current server timestamp
-        boolean isValidSignature = signatureValidationService.validateSignatureWithTolerance(
-                signature, requestDTO.getTerminalId(), requestTime);
+        try {
+            // Use current UTC time for signature validation
+            Instant now = Instant.now();
+            LocalDateTime requestTime = LocalDateTime.ofInstant(now, ZoneOffset.UTC);
 
-        if (!isValidSignature) {
-            throw new InvalidSignatureException("Invalid signature");
+            LoggingUtil.logBusinessEvent(logger, "ECHO_SIGNATURE_VALIDATION_STARTED",
+                    "TERMINAL_ID", requestDTO.getTerminalId(),
+                    "REQUEST_TIME", requestTime);
+
+            // Validate signature using current server timestamp
+            boolean isValidSignature = signatureValidationService.validateSignatureWithTolerance(
+                    signature, requestDTO.getTerminalId(), requestTime);
+
+            if (!isValidSignature) {
+                LoggingUtil.logBusinessEvent(logger, "ECHO_SIGNATURE_VALIDATION_FAILED",
+                        "TERMINAL_ID", requestDTO.getTerminalId(),
+                        "REASON", "Invalid signature");
+                throw new InvalidSignatureException("Invalid signature");
+            }
+
+            LoggingUtil.logBusinessEvent(logger, "ECHO_SIGNATURE_VALIDATION_SUCCESS",
+                    "TERMINAL_ID", requestDTO.getTerminalId());
+
+            // Find terminal
+            LoggingUtil.logBusinessEvent(logger, "ECHO_TERMINAL_LOOKUP_STARTED",
+                    "TERMINAL_ID", requestDTO.getTerminalId());
+
+            TerminalEDC terminal = terminalEDCRepository.findById(requestDTO.getTerminalId())
+                    .orElseThrow(() -> {
+                        LoggingUtil.logBusinessEvent(logger, "ECHO_TERMINAL_NOT_FOUND",
+                                "TERMINAL_ID", requestDTO.getTerminalId());
+                        return new ResourceNotFoundException("Terminal ID not found");
+                    });
+
+            LoggingUtil.logBusinessEvent(logger, "ECHO_TERMINAL_FOUND",
+                    "TERMINAL_ID", requestDTO.getTerminalId(),
+                    "TERMINAL_STATUS", terminal.getStatus());
+
+            // Create echo log entry with current UTC instant - set timestamp manually
+            EchoLog echoLog = EchoLog.builder()
+                    .terminal(terminal)
+                    .timestamp(now) // Set timestamp manually from server
+                    .build();
+
+            LoggingUtil.logBusinessEvent(logger, "ECHO_LOG_SAVE_STARTED",
+                    "TERMINAL_ID", requestDTO.getTerminalId());
+
+            // Save to database
+            EchoLog saved = echoLogRepository.save(echoLog);
+
+            LoggingUtil.logBusinessEvent(logger, "ECHO_LOG_SAVE_SUCCESS",
+                    "TERMINAL_ID", requestDTO.getTerminalId(),
+                    "ECHO_LOG_ID", saved.getId(),
+                    "TIMESTAMP", saved.getTimestamp());
+
+            // Return response - convert Instant to LocalDateTime for response
+            EchoResponseDTO response = EchoResponseDTO.builder()
+                    .id(saved.getId())
+                    .terminalId(requestDTO.getTerminalId())
+                    .timestamp(LocalDateTime.ofInstant(saved.getTimestamp(), ZoneOffset.UTC))
+                    .build();
+
+            LoggingUtil.logBusinessEvent(logger, "ECHO_SERVICE_CREATE_COMPLETED",
+                    "TERMINAL_ID", requestDTO.getTerminalId(),
+                    "ECHO_LOG_ID", saved.getId(),
+                    "STATUS", "SUCCESS");
+
+            return response;
+
+        } catch (InvalidSignatureException | ResourceNotFoundException e) {
+            LoggingUtil.logBusinessEvent(logger, "ECHO_SERVICE_CREATE_FAILED",
+                    "TERMINAL_ID", requestDTO.getTerminalId(),
+                    "ERROR", e.getClass().getSimpleName(),
+                    "MESSAGE", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            LoggingUtil.logBusinessEvent(logger, "ECHO_SERVICE_CREATE_ERROR",
+                    "TERMINAL_ID", requestDTO.getTerminalId(),
+                    "ERROR", e.getClass().getSimpleName(),
+                    "MESSAGE", e.getMessage());
+            throw e;
         }
-
-        // Find terminal
-        TerminalEDC terminal = terminalEDCRepository.findById(requestDTO.getTerminalId())
-                .orElseThrow(() -> new ResourceNotFoundException("Terminal ID not found"));
-
-        // Create echo log entry with current UTC instant - set timestamp manually
-        EchoLog echoLog = EchoLog.builder()
-                .terminal(terminal)
-                .timestamp(now) // Set timestamp manually from server
-                .build();
-
-        // Save to database
-        EchoLog saved = echoLogRepository.save(echoLog);
-
-        // Return response - convert Instant to LocalDateTime for response
-        return EchoResponseDTO.builder()
-                .id(saved.getId())
-                .terminalId(requestDTO.getTerminalId())
-                .timestamp(LocalDateTime.ofInstant(saved.getTimestamp(), ZoneOffset.UTC))
-                .build();
     }
 
     @Override
     @Transactional(readOnly = true)
     public PagedEchoLogResponseDTO getAllEchoLogs(GetEchoLogRequestDTO requestDTO) {
-        // Build sorting
-        Sort.Direction direction = "asc".equalsIgnoreCase(requestDTO.getSortDirection()) ? Sort.Direction.ASC
-                : Sort.Direction.DESC;
-        Sort sort = Sort.by(direction, requestDTO.getSortBy());
+        LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_SERVICE_QUERY_STARTED",
+                "TERMINAL_ID_FILTER", requestDTO.getTerminalId(),
+                "PAGE", requestDTO.getPage(),
+                "SIZE", requestDTO.getSize(),
+                "SORT_BY", requestDTO.getSortBy(),
+                "SORT_DIRECTION", requestDTO.getSortDirection());
 
-        // Build pageable
-        Pageable pageable = PageRequest.of(requestDTO.getPage(), requestDTO.getSize(), sort);
+        try {
+            // Build sorting
+            Sort.Direction direction = "asc".equalsIgnoreCase(requestDTO.getSortDirection()) ? Sort.Direction.ASC
+                    : Sort.Direction.DESC;
+            Sort sort = Sort.by(direction, requestDTO.getSortBy());
 
-        // Build specification for filtering
-        Specification<EchoLog> specification = EchoLogSpecification.buildSpecification(requestDTO);
+            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_SORT_CONFIGURED",
+                    "SORT_FIELD", requestDTO.getSortBy(),
+                    "SORT_DIRECTION", direction.toString());
 
-        // Execute query
-        Page<EchoLog> echoLogPage = echoLogRepository.findAll(specification, pageable);
+            // Build pageable
+            Pageable pageable = PageRequest.of(requestDTO.getPage(), requestDTO.getSize(), sort);
 
-        // Convert entities to DTOs
-        List<EchoResponseDTO> echoLogDTOs = echoLogPage.getContent()
-                .stream()
-                .map(echoLog -> EchoResponseDTO.builder()
-                        .id(echoLog.getId())
-                        .terminalId(echoLog.getTerminal().getTerminalId())
-                        .timestamp(LocalDateTime.ofInstant(echoLog.getTimestamp(), ZoneOffset.UTC))
-                        .build())
-                .collect(Collectors.toList());
+            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_PAGINATION_CONFIGURED",
+                    "PAGE", requestDTO.getPage(),
+                    "SIZE", requestDTO.getSize());
 
-        // Build applied filters description
-        String appliedFilters = EchoLogSpecification.buildAppliedFiltersDescription(requestDTO);
+            // Build specification for filtering
+            Specification<EchoLog> specification = EchoLogSpecification.buildSpecification(requestDTO);
 
-        // Build response
-        return PagedEchoLogResponseDTO.builder()
-                .echoLogs(echoLogDTOs)
-                .page(echoLogPage.getNumber())
-                .size(echoLogPage.getSize())
-                .totalElements(echoLogPage.getTotalElements())
-                .totalPages(echoLogPage.getTotalPages())
-                .first(echoLogPage.isFirst())
-                .last(echoLogPage.isLast())
-                .hasNext(echoLogPage.hasNext())
-                .hasPrevious(echoLogPage.hasPrevious())
-                .numberOfElements(echoLogPage.getNumberOfElements())
-                .sortBy(requestDTO.getSortBy())
-                .sortDirection(requestDTO.getSortDirection())
-                .appliedFilters(appliedFilters)
-                .build();
+            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_FILTERS_APPLIED",
+                    "TERMINAL_ID_FILTER", requestDTO.getTerminalId(),
+                    "TIMESTAMP_FROM", requestDTO.getTimestampFrom(),
+                    "TIMESTAMP_TO", requestDTO.getTimestampTo());
+
+            // Execute query
+            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_DATABASE_QUERY_STARTED");
+
+            Page<EchoLog> echoLogPage = echoLogRepository.findAll(specification, pageable);
+
+            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_DATABASE_QUERY_COMPLETED",
+                    "TOTAL_ELEMENTS", echoLogPage.getTotalElements(),
+                    "TOTAL_PAGES", echoLogPage.getTotalPages(),
+                    "NUMBER_OF_ELEMENTS", echoLogPage.getNumberOfElements());
+
+            // Convert entities to DTOs
+            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_DTO_MAPPING_STARTED",
+                    "RECORDS_TO_MAP", echoLogPage.getNumberOfElements());
+
+            List<EchoResponseDTO> echoLogDTOs = echoLogPage.getContent()
+                    .stream()
+                    .map(echoLog -> EchoResponseDTO.builder()
+                            .id(echoLog.getId())
+                            .terminalId(echoLog.getTerminal().getTerminalId())
+                            .timestamp(LocalDateTime.ofInstant(echoLog.getTimestamp(), ZoneOffset.UTC))
+                            .build())
+                    .collect(Collectors.toList());
+
+            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_DTO_MAPPING_COMPLETED",
+                    "MAPPED_RECORDS", echoLogDTOs.size());
+
+            // Build applied filters description
+            String appliedFilters = EchoLogSpecification.buildAppliedFiltersDescription(requestDTO);
+
+            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_FILTERS_DESCRIPTION",
+                    "APPLIED_FILTERS", appliedFilters);
+
+            // Build response
+            PagedEchoLogResponseDTO response = PagedEchoLogResponseDTO.builder()
+                    .echoLogs(echoLogDTOs)
+                    .page(echoLogPage.getNumber())
+                    .size(echoLogPage.getSize())
+                    .totalElements(echoLogPage.getTotalElements())
+                    .totalPages(echoLogPage.getTotalPages())
+                    .first(echoLogPage.isFirst())
+                    .last(echoLogPage.isLast())
+                    .hasNext(echoLogPage.hasNext())
+                    .hasPrevious(echoLogPage.hasPrevious())
+                    .numberOfElements(echoLogPage.getNumberOfElements())
+                    .sortBy(requestDTO.getSortBy())
+                    .sortDirection(requestDTO.getSortDirection())
+                    .appliedFilters(appliedFilters)
+                    .build();
+
+            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_SERVICE_QUERY_COMPLETED",
+                    "RETURNED_RECORDS", response.getNumberOfElements(),
+                    "TOTAL_AVAILABLE", response.getTotalElements(),
+                    "STATUS", "SUCCESS");
+
+            return response;
+
+        } catch (Exception e) {
+            LoggingUtil.logBusinessEvent(logger, "ECHO_LOGS_SERVICE_QUERY_ERROR",
+                    "ERROR", e.getClass().getSimpleName(),
+                    "MESSAGE", e.getMessage());
+            throw e;
+        }
     }
 }
