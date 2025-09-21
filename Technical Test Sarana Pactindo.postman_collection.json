@@ -1,0 +1,695 @@
+{
+	"info": {
+		"_postman_id": "e8f42cf3-be04-4025-9e20-61c29504c952",
+		"name": "Technical Test Sarana Pactindo",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32071296"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Sign Up",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {\r",
+									"    pm.expect(pm.response.code).to.equal(201);\r",
+									"});\r",
+									"\r",
+									"const responseJson = pm.response.json();\r",
+									"\r",
+									"// Check if token exists in the response\r",
+									"pm.test(\"Token is present in the response\", function () {\r",
+									"    pm.expect(responseJson.data.tokens.accessToken).to.exist;\r",
+									"    pm.expect(responseJson.data.tokens.refreshToken).to.exist;\r",
+									"});\r",
+									"\r",
+									"// Set accessToken and refreshToken in collection variables\r",
+									"pm.collectionVariables.set(\"accessToken\", responseJson.data.tokens.accessToken);\r",
+									"pm.collectionVariables.set(\"refreshToken\", responseJson.data.tokens.refreshToken);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"user7\",\r\n    \"password\": \"123456\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/auth/sign-up",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"auth",
+								"sign-up"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sign Out",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.expect(pm.response.code).to.equal(200);\r",
+									"});\r",
+									"\r",
+									"// Set accessToken and refreshToken in collection variables to be empty\r",
+									"pm.collectionVariables.set(\"accessToken\", \"\");\r",
+									"pm.collectionVariables.set(\"refreshToken\", \"\");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/auth/sign-out",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"auth",
+								"sign-out"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sign In",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.expect(pm.response.code).to.equal(200);\r",
+									"});\r",
+									"\r",
+									"const responseJson = pm.response.json();\r",
+									"\r",
+									"// Check if token exists in the response\r",
+									"pm.test(\"Token is present in the response\", function () {\r",
+									"    pm.expect(responseJson.data.tokens.accessToken).to.exist;\r",
+									"    pm.expect(responseJson.data.tokens.refreshToken).to.exist;\r",
+									"});\r",
+									"\r",
+									"// Set accessToken and refreshToken in collection variables\r",
+									"pm.collectionVariables.set(\"accessToken\", responseJson.data.tokens.accessToken);\r",
+									"pm.collectionVariables.set(\"refreshToken\", responseJson.data.tokens.refreshToken);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"user7\",\r\n    \"password\": \"123456\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/auth/sign-in",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"auth",
+								"sign-in"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.expect(pm.response.code).to.equal(200);\r",
+									"});\r",
+									"\r",
+									"const responseJson = pm.response.json();\r",
+									"\r",
+									"// Check if token exists in the response\r",
+									"pm.test(\"Token is present in the response\", function () {\r",
+									"    pm.expect(responseJson.data.tokens.accessToken).to.exist;\r",
+									"    pm.expect(responseJson.data.tokens.refreshToken).to.exist;\r",
+									"});\r",
+									"\r",
+									"// Set accessToken and refreshToken in collection variables\r",
+									"pm.collectionVariables.set(\"accessToken\", responseJson.data.tokens.accessToken);\r",
+									"pm.collectionVariables.set(\"refreshToken\", responseJson.data.tokens.refreshToken);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"refreshToken\": \"{{refreshToken}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/auth/refresh",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Terminal EDC",
+			"item": [
+				{
+					"name": "Get All EDC",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/edc?page=0&size=5&sortBy=createdAt&terminalType=KIOSK",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"edc"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "5"
+								},
+								{
+									"key": "sortBy",
+									"value": "createdAt"
+								},
+								{
+									"key": "terminalType",
+									"value": "KIOSK"
+								},
+								{
+									"key": "location",
+									"value": "ed",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "ACTIVE",
+									"disabled": true
+								},
+								{
+									"key": "serialNumber",
+									"value": "JKT",
+									"disabled": true
+								},
+								{
+									"key": "model",
+									"value": "EDC",
+									"disabled": true
+								},
+								{
+									"key": "manufacturer",
+									"value": "BCA",
+									"disabled": true
+								},
+								{
+									"key": "ipAddress",
+									"value": "192.168.25.204",
+									"disabled": true
+								},
+								{
+									"key": "lastMaintenanceFrom",
+									"value": "2025-09-20",
+									"disabled": true
+								},
+								{
+									"key": "lastMaintenanceTo",
+									"value": "2025-09-20",
+									"disabled": true
+								},
+								{
+									"key": "createdFrom",
+									"value": "2025-09-20",
+									"disabled": true
+								},
+								{
+									"key": "createdTo",
+									"value": "2025-09-20",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get EDC Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/edc/{{terminalId}}",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"edc",
+								"{{terminalId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create EDC",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"terminalId\": \"KIOSK-MKS-017\",\r\n            \"location\": \"Makassar Shopping Plaza\",\r\n            \"status\": \"MAINTENANCE\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/edc",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"edc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit EDC",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"location\": \"Makassar Edited\"\r\n    ,\r\n    \"status\": \"ACTIVE\"\r\n    ,\r\n    \"serialNumber\": \"MKS999238\"\r\n    ,\r\n    \"model\": \"KIOSK-Remote-2025\"\r\n    ,\r\n    \"manufacturer\": \"BCA Systems\"\r\n    ,\r\n    \"ipAddress\": \"192.168.25.204\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/edc/{{terminalId}}",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"edc",
+								"{{terminalId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove EDC",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/edc/{{terminalId}}",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"edc",
+								"{{terminalId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{accessToken}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Echo",
+			"item": [
+				{
+					"name": "Echo Receiver",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const crypto = require('crypto-js');\r",
+									"const requestBody = pm.request.body.raw;\r",
+									"const parsedBody = JSON.parse(requestBody);\r",
+									"const terminalId = parsedBody.terminalId;\r",
+									"\r",
+									"const dateTime = new Date().toISOString().slice(0, 19); // yyyy-MM-ddTHH:mm:ss\r",
+									"const secret = \"EDCmgmt2025!.?\";\r",
+									"const key = dateTime + \"|\" + secret;\r",
+									"const signature = crypto.HmacSHA256(terminalId, key).toString(crypto.enc.Hex);\r",
+									"\r",
+									"pm.request.headers.upsert({\r",
+									"    key: \"Signature\",\r",
+									"    value: signature\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Signature",
+								"value": "{{signature}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"terminalId\": \"EDC-JKT-001\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/edc/echo",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"edc",
+								"echo"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Echo Logs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/edc/echo-logs?page=0&size=5&terminalId=edc",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"edc",
+								"echo-logs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "5"
+								},
+								{
+									"key": "terminalId",
+									"value": "edc"
+								},
+								{
+									"key": "timestampFrom",
+									"value": "2025-09-20",
+									"disabled": true
+								},
+								{
+									"key": "timestampTo",
+									"value": "2025-09-20",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "noauth"
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Ping",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/ping",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"ping"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": ""
+		},
+		{
+			"key": "accessToken",
+			"value": ""
+		},
+		{
+			"key": "refreshToken",
+			"value": ""
+		},
+		{
+			"key": "terminalId",
+			"value": ""
+		},
+		{
+			"key": "signature",
+			"value": ""
+		},
+		{
+			"key": "dateTime",
+			"value": ""
+		}
+	]
+}

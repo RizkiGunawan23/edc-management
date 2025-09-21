@@ -32,9 +32,6 @@ build/
 ### VS Code ###
 .vscode/
 
-### Test Data Files ###
-*.json
-
 # Logs
 *.log
 logs/
