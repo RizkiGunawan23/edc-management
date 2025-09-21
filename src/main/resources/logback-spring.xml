@@ -70,6 +70,21 @@
         <appender-ref ref="BUSINESS_FILE"/>
     </logger>
     
+    <logger name="com.rizki.edcmanagement.util.LoggingUtil" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="BUSINESS_FILE"/>
+    </logger>
+    
+    <logger name="com.rizki.edcmanagement.config" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="BUSINESS_FILE"/>
+    </logger>
+    
+    <logger name="com.rizki.edcmanagement.specification" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="BUSINESS_FILE"/>
+    </logger>
+    
     <!-- Specialized loggers -->
     <logger name="PERFORMANCE" level="INFO" additivity="false">
         <appender-ref ref="PERFORMANCE_FILE"/>
