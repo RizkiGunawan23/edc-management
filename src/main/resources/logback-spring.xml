@@ -79,27 +79,51 @@
         <appender-ref ref="AUDIT_FILE"/>
     </logger>
     
-    <!-- Suppress noisy framework logs -->
-    <logger name="org.springframework" level="WARN" additivity="false">
-        <appender-ref ref="BUSINESS_FILE"/>
-    </logger>
+    <!-- Suppress noisy framework logs - Aggressive noise reduction -->
+    <logger name="org.springframework" level="ERROR" additivity="false"/>
+    <logger name="org.springframework.boot" level="ERROR" additivity="false"/>
+    <logger name="org.springframework.web" level="ERROR" additivity="false"/>
+    <logger name="org.springframework.security" level="ERROR" additivity="false"/>
+    <logger name="org.springframework.boot.devtools" level="OFF" additivity="false"/>
     
-    <logger name="org.hibernate" level="WARN" additivity="false">
-        <appender-ref ref="BUSINESS_FILE"/>
-    </logger>
+    <!-- Database and connection pool -->
+    <logger name="org.hibernate" level="ERROR" additivity="false"/>
+    <logger name="org.hibernate.SQL" level="OFF" additivity="false"/>
+    <logger name="org.hibernate.type" level="OFF" additivity="false"/>
+    <logger name="org.hibernate.orm.deprecation" level="OFF" additivity="false"/>
+    <logger name="com.zaxxer.hikari" level="ERROR" additivity="false"/>
+    <logger name="com.zaxxer.hikari.pool.HikariPool" level="OFF" additivity="false"/>
+    <logger name="com.zaxxer.hikari.HikariDataSource" level="OFF" additivity="false"/>
+    <logger name="com.zaxxer.hikari.HikariConfig" level="OFF" additivity="false"/>
     
-    <logger name="com.zaxxer.hikari" level="WARN" additivity="false">
-        <appender-ref ref="BUSINESS_FILE"/>
-    </logger>
+    <!-- JPA and validation -->
+    <logger name="org.springframework.orm.jpa" level="ERROR" additivity="false"/>
+    <logger name="org.springframework.data.jpa" level="ERROR" additivity="false"/>
+    <logger name="javax.persistence" level="OFF" additivity="false"/>
+    <logger name="org.hibernate.validator" level="ERROR" additivity="false"/>
     
-    <logger name="org.apache.catalina" level="WARN" additivity="false">
-        <appender-ref ref="BUSINESS_FILE"/>
-    </logger>
+    <!-- Tomcat and server -->
+    <logger name="org.apache.catalina" level="ERROR" additivity="false"/>
+    <logger name="org.apache.tomcat" level="ERROR" additivity="false"/>
+    <logger name="org.apache.coyote" level="ERROR" additivity="false"/>
+    <logger name="org.eclipse.jetty" level="ERROR" additivity="false"/>
     
-    <!-- Suppress DevTools noise -->
-    <logger name="org.springframework.boot.devtools" level="WARN" additivity="false">
-        <appender-ref ref="BUSINESS_FILE"/>
-    </logger>
+    <!-- Jackson and serialization -->
+    <logger name="com.fasterxml.jackson" level="ERROR" additivity="false"/>
+    
+    <!-- HTTP clients and misc -->
+    <logger name="org.apache.http" level="ERROR" additivity="false"/>
+    <logger name="httpclient" level="ERROR" additivity="false"/>
+    <logger name="org.reflections" level="OFF" additivity="false"/>
+    
+    <!-- Spring Boot Actuator -->
+    <logger name="org.springframework.boot.actuate" level="ERROR" additivity="false"/>
+    
+    <!-- Template engines -->
+    <logger name="org.thymeleaf" level="ERROR" additivity="false"/>
+    
+    <!-- Netty (if used) -->
+    <logger name="io.netty" level="ERROR" additivity="false"/>
     
     <!-- Root logger (minimal for everything else) -->
     <root level="WARN">

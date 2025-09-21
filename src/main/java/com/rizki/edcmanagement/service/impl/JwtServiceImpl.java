@@ -5,10 +5,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.rizki.edcmanagement.service.JwtService;
+import com.rizki.edcmanagement.util.LoggingUtil;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -17,6 +20,8 @@ import io.jsonwebtoken.security.Keys;
 
 @Service
 public class JwtServiceImpl implements JwtService {
+    private static final Logger logger = LoggerFactory.getLogger(JwtServiceImpl.class);
+
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
 
@@ -36,15 +41,57 @@ public class JwtServiceImpl implements JwtService {
     }
 
     public String generateToken(String username, Long userId) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", userId);
-        return createToken(claims, username, JWT_EXPIRATION);
+        LoggingUtil.logBusinessEvent(logger, "JWT_ACCESS_TOKEN_GENERATION_STARTED",
+                "USERNAME", username,
+                "USER_ID", userId);
+
+        try {
+            Map<String, Object> claims = new HashMap<>();
+            claims.put("userId", userId);
+            String token = createToken(claims, username, JWT_EXPIRATION);
+
+            LoggingUtil.logBusinessEvent(logger, "JWT_ACCESS_TOKEN_GENERATION_SUCCESS",
+                    "USERNAME", username,
+                    "USER_ID", userId,
+                    "TOKEN_LENGTH", token.length(),
+                    "EXPIRATION_MS", JWT_EXPIRATION);
+
+            return token;
+        } catch (Exception e) {
+            LoggingUtil.logBusinessEvent(logger, "JWT_ACCESS_TOKEN_GENERATION_ERROR",
+                    "USERNAME", username,
+                    "USER_ID", userId,
+                    "ERROR", e.getClass().getSimpleName(),
+                    "MESSAGE", e.getMessage());
+            throw e;
+        }
     }
 
     public String generateRefreshToken(String username, Long userId) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", userId);
-        return createToken(claims, username, REFRESH_EXPIRATION);
+        LoggingUtil.logBusinessEvent(logger, "JWT_REFRESH_TOKEN_GENERATION_STARTED",
+                "USERNAME", username,
+                "USER_ID", userId);
+
+        try {
+            Map<String, Object> claims = new HashMap<>();
+            claims.put("userId", userId);
+            String token = createToken(claims, username, REFRESH_EXPIRATION);
+
+            LoggingUtil.logBusinessEvent(logger, "JWT_REFRESH_TOKEN_GENERATION_SUCCESS",
+                    "USERNAME", username,
+                    "USER_ID", userId,
+                    "TOKEN_LENGTH", token.length(),
+                    "EXPIRATION_MS", REFRESH_EXPIRATION);
+
+            return token;
+        } catch (Exception e) {
+            LoggingUtil.logBusinessEvent(logger, "JWT_REFRESH_TOKEN_GENERATION_ERROR",
+                    "USERNAME", username,
+                    "USER_ID", userId,
+                    "ERROR", e.getClass().getSimpleName(),
+                    "MESSAGE", e.getMessage());
+            throw e;
+        }
     }
 
     public String createToken(Map<String, Object> claims, String subject, long expiration) {
@@ -58,26 +105,54 @@ public class JwtServiceImpl implements JwtService {
     }
 
     public boolean isTokenValid(String token) {
+        LoggingUtil.logBusinessEvent(logger, "JWT_TOKEN_VALIDATION_STARTED",
+                "TOKEN_LENGTH", token.length());
+
         try {
             Jwts.parserBuilder()
                     .setSigningKey(getSignInKey())
                     .build()
                     .parseClaimsJws(token);
+
+            LoggingUtil.logBusinessEvent(logger, "JWT_TOKEN_VALIDATION_SUCCESS",
+                    "TOKEN_LENGTH", token.length());
+
             return true;
         } catch (Exception e) {
+            LoggingUtil.logBusinessEvent(logger, "JWT_TOKEN_VALIDATION_FAILED",
+                    "TOKEN_LENGTH", token.length(),
+                    "ERROR", e.getClass().getSimpleName(),
+                    "MESSAGE", e.getMessage());
+
             return false;
         }
     }
 
     public boolean isTokenExpired(String token) {
+        LoggingUtil.logBusinessEvent(logger, "JWT_TOKEN_EXPIRATION_CHECK_STARTED",
+                "TOKEN_LENGTH", token.length());
+
         try {
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(getSignInKey())
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
-            return claims.getExpiration().before(new Date());
+
+            boolean isExpired = claims.getExpiration().before(new Date());
+
+            LoggingUtil.logBusinessEvent(logger, "JWT_TOKEN_EXPIRATION_CHECK_COMPLETED",
+                    "TOKEN_LENGTH", token.length(),
+                    "IS_EXPIRED", isExpired,
+                    "EXPIRATION_DATE", claims.getExpiration());
+
+            return isExpired;
         } catch (Exception e) {
+            LoggingUtil.logBusinessEvent(logger, "JWT_TOKEN_EXPIRATION_CHECK_ERROR",
+                    "TOKEN_LENGTH", token.length(),
+                    "ERROR", e.getClass().getSimpleName(),
+                    "MESSAGE", e.getMessage());
+
             return true; // If token is invalid, consider it expired
         }
     }
